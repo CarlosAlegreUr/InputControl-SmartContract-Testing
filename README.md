@@ -13,6 +13,14 @@ Check the contract code and future npm and yarn package here => [(click)](https:
 
 The code in this repo has only been tested in the hardhat local network during 2 afternoons. Should work though.
 
+Also asked ChatGPT about it, this was it's answer:
+
+``` Overall, the InputControl smart contract looks well-structured and easy to understand. However, there are some areas where improvements could be made to enhance its functionality and usability. ```
+
+After showing ChatGPT the UseCaseContract, it answered:
+
+```Based on the presented code, it seems that the previous improvement recommendations are not relevant anymore as they have been addressed in this version of the contract. However, it is always good practice to keep reviewing and improving the code to ensure it is secure and efficient. ```
+
 If further elaboration or development please mention me in your work.
 
 😉 https://github.com/CarlosAlegreUr 😉

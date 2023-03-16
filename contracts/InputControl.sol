@@ -16,7 +16,7 @@ error InputControl_HashCollisionWith0Value();
  * your smart contracts' functions. Even more: in case of needing an specific order of inputs
  * in multiple calls to the same function, it's also handeled by InputControl.
  *
- * @dev Check an example of use on a contract at UseCaseContract.sol on the github repo:
+ * @dev Check an usecase on a contract at UseCaseContract.sol on the github repo:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/UseCaseContract.sol
  *
  */
@@ -27,7 +27,7 @@ contract InputControl {
      * @dev inputSequence struct allows the user tho call any input in the inputs array
      * but it has to be done in the order they are indexed.
      *
-     * Example => First the input at index 0, then the one at index 1, then the index 2 value etc...
+     * Example => First call must be done with the input at index 0, then the one at index 1, then the index 2 value etc...
      */
     struct inputSequence {
         uint256 numOfCalls;
@@ -37,8 +37,8 @@ contract InputControl {
 
     /**
      * @dev inputUnordered struct allows the user to call any input in the inputs array
-     * in any order. If desired to call twice the function with the sme input, add the input
-     * twice in the array.
+     * in any order. If desired to call twice the function with the same input, add the input
+     * twice in the array and so on.
      */
     struct inputUnordered {
         uint256 numOfCalls;
@@ -51,10 +51,12 @@ contract InputControl {
     mapping(string => mapping(address => inputUnordered)) s_funcSignatureToAllowedinputUnordered;
 
     /* Events */
+
     event InputControl__AllowedInputsGranted(
         address indexed client,
         string indexed funcSig,
-        bytes32[] validInputs
+        bytes32[] validInputs,
+        bool isSequence
     );
 
     /* Modifiers */
@@ -156,7 +158,7 @@ contract InputControl {
     /**
      * @dev Override this function in your contract to use
      * allowInputsFor() mixed with other useful contracts and
-     * modifiers like Owner and AccessControl contracts of
+     * modifiers like Owner and AccessControl contracts from
      * OpenZeppelin.
      *
      * See param specifications in allowInputsFor() docs.
@@ -175,7 +177,7 @@ contract InputControl {
      * values.
      * 
      * @param _validInputs Each element must correspond to the equivalent of
-     * executing in solidity the following funtions with inputs' values:
+     * executing in solidity the following functions with the inputs' values:
      * validInputUniqueIdentifier = keccak256(abi.encodePacked(input))
      * 
      * @dev Maybe an input has a keccak256(abi.encodePacked(input)) == the empty
@@ -225,7 +227,8 @@ contract InputControl {
         emit InputControl__AllowedInputsGranted(
             _client,
             _funcSignature,
-            _validInputs
+            _validInputs,
+            _isSequence
         );
     }
 }

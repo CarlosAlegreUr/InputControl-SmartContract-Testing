@@ -63,7 +63,7 @@ contract UseCaseContract is InputControl, Ownable {
     }
 
     // Overriding function and using OnlyOwner, now only owner(in this case owner = deployer address)
-    // of this contract can control inputs' control.
+    // of this contract can control inputs control.
     function callAllowInputsFor(
         address _client,
         bytes32[] calldata _validInputs,

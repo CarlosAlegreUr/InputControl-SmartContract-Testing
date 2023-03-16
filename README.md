@@ -9,7 +9,8 @@
 
 # Tests and simple implementation for InputControl contract.
 
-Check the contract code and future npm and yarn package here => [(click)](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
+Check the contract code here => [(click)](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
+Check the npm repository => [(click)](https://www.npmjs.com/package/input-control-contract)
 
 The code in this repo has only been tested in the hardhat local network during 2 afternoons. Should work though.
 

@@ -21,7 +21,7 @@ After showing ChatGPT the UseCaseContract, it answered:
 
 ```Based on the presented code, it seems that the previous improvement recommendations are not relevant anymore as they have been addressed in this version of the contract. However, it is always good practice to keep reviewing and improving the code to ensure it is secure and efficient. ```
 
-If further elaboration or development please mention me in your work.
+If further elaboration, development or testing please mention me in your work.
 
 😉 https://github.com/CarlosAlegreUr 😉
 

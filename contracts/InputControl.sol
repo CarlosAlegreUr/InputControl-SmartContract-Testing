@@ -3,7 +3,8 @@ pragma solidity ^0.8.9;
 
 /* Customed Errors */
 error InputControl__NotAllowedInput();
-error InputControl_HashCollisionWith0Value();
+error InputControl__InputAlreadyUsed();
+error InputControl__HashCollisionWith0Value();
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
@@ -39,14 +40,27 @@ contract InputControl {
      * @dev inputUnordered struct allows the user to call any input in the inputs array
      * in any order. If desired to call twice the function with the same input, add the input
      * twice in the array and so on.
+     *
+     * @dev The only reason why `inputToPosition` and `inputs` exist is that they are needed
+     * when client call getAllowedInputs() to be aware of which inputs are allowed and which
+     * ones are already used. Notice you can still control the inputs without this extra steps
+     * and make the contract cheaper to use, but then it would be less user-friendly.
      */
     struct inputUnordered {
-        uint256 numOfCalls;
+        mapping(bytes32 => bool) isInputUsed;
+        mapping(bytes32 => uint) inputToPosition;
         bytes32[] inputs;
     }
 
     /* State Variables */
 
+    /**
+     * @notice String data type has been chosen instead of bytes for function signatures. Even thouogh
+     * bytes are more gas efficient string provides developer friendly and easier to understand code.
+     *
+     * Gas implications haven't been calculated yet if they are reasonably big in the future string will be
+     * changed for bytes type.
+     */
     mapping(string => mapping(address => inputSequence)) s_funcSignatureToAllowedInputSequence;
     mapping(string => mapping(address => inputUnordered)) s_funcSignatureToAllowedinputUnordered;
 
@@ -94,33 +108,28 @@ contract InputControl {
                 revert InputControl__NotAllowedInput();
             }
         } else {
-            inputUnordered memory spec = s_funcSignatureToAllowedinputUnordered[
-                _funcSig
-            ][_clientAddress];
-            if (spec.numOfCalls != 0) {
-                uint256 i = 0;
-                bool found = false;
-                while (!found && i < spec.inputs.length) {
-                    if (spec.inputs[i] == _input) {
-                        delete s_funcSignatureToAllowedinputUnordered[_funcSig][
-                            _clientAddress
-                        ].inputs[i];
-                        spec.numOfCalls -= 1;
-                        found = true;
-                        if (spec.numOfCalls == 0) {
-                            delete s_funcSignatureToAllowedinputUnordered[
-                                _funcSig
-                            ][_clientAddress];
-                        }
-                    } else {
-                        i += 1;
-                    }
-                }
-                if (!found) {
+            if (
+                s_funcSignatureToAllowedinputUnordered[_funcSig][_clientAddress]
+                    .isInputUsed[_input] == true
+            ) {
+                revert InputControl__NotAllowedInput();
+            } else {
+                if (
+                    s_funcSignatureToAllowedinputUnordered[_funcSig][
+                        _clientAddress
+                    ].inputToPosition[_input] == 0
+                ) {
                     revert InputControl__NotAllowedInput();
                 }
-            } else {
-                revert InputControl__NotAllowedInput();
+                s_funcSignatureToAllowedinputUnordered[_funcSig][_clientAddress]
+                    .isInputUsed[_input] = true;
+                delete s_funcSignatureToAllowedinputUnordered[_funcSig][
+                    _clientAddress
+                ].inputs[
+                        s_funcSignatureToAllowedinputUnordered[_funcSig][
+                            _clientAddress
+                        ].inputToPosition[_input] - 1
+                    ];
             }
         }
         _;
@@ -136,6 +145,8 @@ contract InputControl {
      * the indexes of inputs at the inputs array show in which order when calling `_funcSignature` those
      * inputs' values can be used. If `_isSequence` == false then inputs at the array can be called in any
      * order.
+     *
+     * If any of the values is the 0 value it means the value has been used.
      */
     function getAllowedInputs(
         string memory _funcSignature,
@@ -175,11 +186,11 @@ contract InputControl {
     /**
      * @dev Allows `_client` to call `_funcSignature` with `_validInputs`
      * values.
-     * 
+     *
      * @param _validInputs Each element must correspond to the equivalent of
      * executing in solidity the following functions with the inputs' values:
      * validInputUniqueIdentifier = keccak256(abi.encodePacked(input))
-     * 
+     *
      * @dev Maybe an input has a keccak256(abi.encodePacked(input)) == the empty
      * value for bytes32 in solidity. This is the value that InputControl uses to
      * know if an input in the inputUnordered structure has been used, so in the unlikely but
@@ -202,6 +213,15 @@ contract InputControl {
         string calldata _funcSignature,
         bool _isSequence
     ) internal {
+        for (uint256 i = 0; i < _validInputs.length; i++) {
+            if (
+                _validInputs[i] ==
+                0x0000000000000000000000000000000000000000000000000000000000000000
+            ) {
+                revert InputControl__HashCollisionWith0Value();
+            }
+        }
+
         if (_isSequence) {
             s_funcSignatureToAllowedInputSequence[_funcSignature][_client]
                 .numOfCalls = _validInputs.length;
@@ -210,18 +230,12 @@ contract InputControl {
             s_funcSignatureToAllowedInputSequence[_funcSignature][_client]
                 .inputs = _validInputs;
         } else {
-            for (uint256 i = 0; i < _validInputs.length; i++) {
-                if (
-                    _validInputs[i] ==
-                    0x0000000000000000000000000000000000000000000000000000000000000000
-                ) {
-                    revert InputControl_HashCollisionWith0Value();
-                }
-            }
-            s_funcSignatureToAllowedinputUnordered[_funcSignature][_client]
-                .numOfCalls = _validInputs.length;
             s_funcSignatureToAllowedinputUnordered[_funcSignature][_client]
                 .inputs = _validInputs;
+            for (uint256 i = 0; i < _validInputs.length; i++) {
+                s_funcSignatureToAllowedinputUnordered[_funcSignature][_client]
+                    .inputToPosition[_validInputs[i]] = i + 1;
+            }
         }
 
         emit InputControl__AllowedInputsGranted(

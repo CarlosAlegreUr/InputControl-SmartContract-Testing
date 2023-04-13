@@ -100,6 +100,30 @@ describe("InputControl.sol tests", function () {
         assert.equal(allowedInputs[0], validInputs);
         assert.equal(allowedInputs[1], validInputs2);
       });
+
+      it(`Simulating allowed input with "hash collision", must revert.`, async () => {
+        let validInputs = await ethers.utils.solidityPack(
+          ["uint256", "string"],
+          ["2", "valid"]
+        );
+        validInputs = await ethers.utils.keccak256(validInputs);
+
+        // Values for functions are stored correctly and event is emitted.
+        await expect(
+          inputControlContract.callAllowInputsFor(
+            client1,
+            [
+              validInputs,
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+            ],
+            "func()",
+            true
+          )
+        ).revertedWithCustomError(
+          inputControlContract,
+          "InputControl__HashCollisionWith0Value"
+        );
+      });
     });
 
     describe("InputControl functionalities implemented in other contract tests.", function () {
@@ -231,7 +255,7 @@ describe("InputControl.sol tests", function () {
         assert.equal(allowedInputs, validInputs);
       });
 
-      it(`Simulating allowing input with "hash collision", must revert.`, async () => {
+      it(`Simulating allowed input with "hash collision", must revert.`, async () => {
         let validInputs = await ethers.utils.solidityPack(
           ["uint256", "string"],
           ["2", "valid"]
@@ -251,7 +275,7 @@ describe("InputControl.sol tests", function () {
           )
         ).revertedWithCustomError(
           inputControlContract,
-          "InputControl_HashCollisionWith0Value"
+          "InputControl__HashCollisionWith0Value"
         );
       });
     });
@@ -353,7 +377,7 @@ describe("InputControl.sol tests", function () {
           )
         ).revertedWithCustomError(
           useCaseContract,
-          "InputControl_HashCollisionWith0Value"
+          "InputControl__HashCollisionWith0Value"
         );
       });
     });

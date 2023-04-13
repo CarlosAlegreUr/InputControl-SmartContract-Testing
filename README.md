@@ -17,11 +17,11 @@ The code in this repo has only been tested in the hardhat local network during 2
 
 Also asked ChatGPT about it, this was it's answer:
 
-``` Overall, the InputControl smart contract looks well-structured and easy to understand. However, there are some areas where improvements could be made to enhance its functionality and usability. ```
+`Overall, the InputControl smart contract looks well-structured and easy to understand. However, there are some areas where improvements could be made to enhance its functionality and usability.`
 
 After showing ChatGPT the UseCaseContract, it answered:
 
-```Based on the presented code, it seems that the previous improvement recommendations are not relevant anymore as they have been addressed in this version of the contract. However, it is always good practice to keep reviewing and improving the code to ensure it is secure and efficient. ```
+`Based on the presented code, it seems that the previous improvement recommendations are not relevant anymore as they have been addressed in this version of the contract. However, it is always good practice to keep reviewing and improving the code to ensure it is secure and efficient. `
 
 If further elaboration, development or testing please mention me in your work.
 
@@ -31,7 +31,8 @@ If further elaboration, development or testing please mention me in your work.
 
 ## 📰 Last Changes 📰
 
-- Now unorderedInput struct uses mappings instead of an array to control the inputs. (Improved from O(n) to O(1) checking time, furthermore is more gas efficient).
+- Now unorderedInput struct uses mappings instead of an array to control the inputs. Improved from O(n) to O(1) checking time, furthermore is more gas efficient.
+- New forgotten test added: Hash collision behaviour in orderedInput.
 
 ## 📨 Contact 📨
 

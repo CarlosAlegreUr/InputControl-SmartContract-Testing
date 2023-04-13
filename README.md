@@ -29,6 +29,10 @@ If further elaboration, development or testing please mention me in your work.
 
 <hr/>
 
+## 📰 Last Changes 📰
+
+- Now unorderedInput struct uses mappings instead of an array to control the inputs. (Improved from O(n) to O(1) checking time, furthermore is more gas efficient).
+
 ## 📨 Contact 📨
 
 Carlos Alegre Urquizú - calegreu@gmail.com

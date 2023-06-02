@@ -13,9 +13,7 @@ Check the contract code here => [(click)](https://github.com/CarlosAlegreUr/Inpu
 
 Check the npm repository => [(click)](https://www.npmjs.com/package/input-control-contract)
 
-The code in this repo has only been tested in the hardhat local network during 2 afternoons. Should work though.
-
-Also asked ChatGPT about it, this was it's answer:
+I asked ChatGPT about it, this was it's answer:
 
 `Overall, the InputControl smart contract looks well-structured and easy to understand. However, there are some areas where improvements could be made to enhance its functionality and usability.`
 
@@ -31,8 +29,13 @@ If further elaboration, development or testing please mention me in your work.
 
 ## 📰 Last Changes 📰
 
-- Now unorderedInput struct uses mappings instead of an array to control the inputs. Improved from O(n) to O(1) checking time, furthermore is more gas efficient.
-- New forgotten test added: Hash collision behaviour in sequenceInput.
+- abi.encodePacked() was fatal error! Same inputs might have the same encoded value. Now using abi.encode().
+- Now you can decide wheter a function allows inputs in ordered or unordered manner even after deployment.
+- Handle collision with 0 value not needed: now map to bool indicates if input has already been used.
+- Better memory management when unordered inputs used.
+- Function selectors now are bytes4 instead of strings, like actual func selectors in ETH.
+- Shortened variable names in code.
+- Tests improved.
 
 ## 📨 Contact 📨
 

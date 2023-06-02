@@ -1,4 +1,4 @@
-const { assert, expect, use } = require("chai");
+const { assert, expect } = require("chai");
 const { ethers, getNamedAccounts } = require("hardhat");
 
 describe("InputControl.sol tests", function () {
@@ -100,30 +100,6 @@ describe("InputControl.sol tests", function () {
         assert.equal(allowedInputs[0], validInputs);
         assert.equal(allowedInputs[1], validInputs2);
       });
-
-      it(`Simulating allowed input with "hash collision", must revert.`, async () => {
-        let validInputs = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["2", "valid"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
-        // Values for functions are stored correctly and event is emitted.
-        await expect(
-          inputControlContract.callAllowInputsFor(
-            client1,
-            [
-              validInputs,
-              "0x0000000000000000000000000000000000000000000000000000000000000000",
-            ],
-            "func()",
-            true
-          )
-        ).revertedWithCustomError(
-          inputControlContract,
-          "InputControl__HashCollisionWith0Value"
-        );
-      });
     });
 
     describe("InputControl functionalities implemented in other contract tests.", function () {
@@ -136,13 +112,13 @@ describe("InputControl.sol tests", function () {
       });
 
       it("Using InputControl in other contract.", async () => {
-        let validInputs = await ethers.utils.solidityPack(
+        let validInputs = await ethers.utils.defaultAbiCoder.encode(
           ["uint256", "address"],
           [1, "0x000000000000000000000000000000000000dEaD"]
         );
         validInputs = await ethers.utils.keccak256(validInputs);
 
-        let validInputs2 = await ethers.utils.solidityPack(
+        let validInputs2 = await ethers.utils.defaultAbiCoder.encode(
           ["uint256", "address"],
           ["3", "0x000000000000000000000000000000000000dEaD"]
         );
@@ -150,7 +126,7 @@ describe("InputControl.sol tests", function () {
 
         // Permission not given yet, must revert.
         await expect(
-          useCaseContractClient1.myFuncInSequence(
+          useCaseContractClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
@@ -161,14 +137,14 @@ describe("InputControl.sol tests", function () {
 
         await useCaseContract.callAllowInputsFor(
           client1,
-          [validInputs, validInputs2],
-          "myFuncInSequence(uint256, address)",
+          [validInputs, validInputs2, validInputs],
+          "myFunc(uint256,address)",
           true
         );
 
         // Permission given but calling in different order, must revert.
         await expect(
-          useCaseContractClient1.myFuncInSequence(
+          useCaseContractClient1.myFunc(
             3,
             "0x000000000000000000000000000000000000dEaD"
           )
@@ -178,23 +154,50 @@ describe("InputControl.sol tests", function () {
         );
 
         // Calling in correct order, should execute correctly.
-        await useCaseContractClient1.myFuncInSequence(
+        await useCaseContractClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
         let number = await useCaseContractClient1.getNumber();
         assert.equal(1, number);
 
-        await useCaseContractClient1.myFuncInSequence(
+        await useCaseContractClient1.myFunc(
           3,
           "0x000000000000000000000000000000000000dEaD"
         );
         number = await useCaseContractClient1.getNumber();
         assert.equal(3, number);
 
+        await useCaseContractClient1.myFunc(
+          1,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        number = await useCaseContractClient1.getNumber();
+        assert.equal(1, number);
+
         // After calling correctly, if calling again must revert.
         await expect(
-          useCaseContractClient1.myFuncInSequence(
+          useCaseContractClient1.myFunc(
+            1,
+            "0x000000000000000000000000000000000000dEaD"
+          )
+        ).revertedWithCustomError(
+          useCaseContractClient1,
+          "InputControl__NotAllowedInput"
+        );
+
+        await expect(
+          useCaseContractClient1.myFunc(
+            3,
+            "0x000000000000000000000000000000000000dEaD"
+          )
+        ).revertedWithCustomError(
+          useCaseContractClient1,
+          "InputControl__NotAllowedInput"
+        );
+
+        await expect(
+          useCaseContractClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
@@ -254,30 +257,6 @@ describe("InputControl.sol tests", function () {
         );
         assert.equal(allowedInputs, validInputs);
       });
-
-      it(`Simulating allowed input with "hash collision", must revert.`, async () => {
-        let validInputs = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["2", "valid"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
-        // Values for functions are stored correctly and event is emitted.
-        await expect(
-          inputControlContract.callAllowInputsFor(
-            client1,
-            [
-              validInputs,
-              "0x0000000000000000000000000000000000000000000000000000000000000000",
-            ],
-            "func()",
-            false
-          )
-        ).revertedWithCustomError(
-          inputControlContract,
-          "InputControl__HashCollisionWith0Value"
-        );
-      });
     });
 
     describe("InputControl functionalities implemented in other contract tests.", function () {
@@ -290,13 +269,13 @@ describe("InputControl.sol tests", function () {
       });
 
       it("Using InputControl in other contract.", async () => {
-        let validInputs = await ethers.utils.solidityPack(
+        let validInputs = await ethers.utils.defaultAbiCoder.encode(
           ["uint256", "address"],
           [1, "0x000000000000000000000000000000000000dEaD"]
         );
         validInputs = await ethers.utils.keccak256(validInputs);
 
-        let validInputs2 = await ethers.utils.solidityPack(
+        let validInputs2 = await ethers.utils.defaultAbiCoder.encode(
           ["uint256", "address"],
           ["3", "0x000000000000000000000000000000000000dEaD"]
         );
@@ -304,7 +283,7 @@ describe("InputControl.sol tests", function () {
 
         // Permission not given yet, must revert.
         await expect(
-          useCaseContractClient1.myFuncInSequence(
+          useCaseContractClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
@@ -315,20 +294,27 @@ describe("InputControl.sol tests", function () {
 
         await useCaseContract.callAllowInputsFor(
           client1,
-          [validInputs, validInputs2],
-          "myFuncUnordered(uint256, address)",
+          [validInputs, validInputs2, validInputs],
+          "myFunc(uint256,address)",
           false
         );
 
         // Permission given, should not revert.
-        await useCaseContractClient1.myFuncUnordered(
+        await useCaseContractClient1.myFunc(
           3,
           "0x000000000000000000000000000000000000dEaD"
         );
         let number = await useCaseContractClient1.getNumber();
         assert.equal(3, number);
 
-        await useCaseContractClient1.myFuncUnordered(
+        await useCaseContractClient1.myFunc(
+          1,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        number = await useCaseContractClient1.getNumber();
+        assert.equal(1, number);
+
+        await useCaseContractClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
@@ -337,7 +323,7 @@ describe("InputControl.sol tests", function () {
 
         // Inputs already used, must revert.
         await expect(
-          useCaseContractClient1.myFuncUnordered(
+          useCaseContractClient1.myFunc(
             3,
             "0x000000000000000000000000000000000000dEaD"
           )
@@ -347,7 +333,7 @@ describe("InputControl.sol tests", function () {
         );
 
         await expect(
-          useCaseContractClient1.myFuncUnordered(
+          useCaseContractClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
@@ -355,29 +341,15 @@ describe("InputControl.sol tests", function () {
           useCaseContractClient1,
           "InputControl__NotAllowedInput"
         );
-      });
 
-      it(`Simulating allowing input with "hash collision", must revert.`, async () => {
-        let validInputs = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["2", "valid"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
-        // Values for functions are stored correctly and event is emitted.
         await expect(
-          useCaseContract.callAllowInputsFor(
-            client1,
-            [
-              validInputs,
-              "0x0000000000000000000000000000000000000000000000000000000000000000",
-            ],
-            "func()",
-            false
+          useCaseContractClient1.myFunc(
+            1,
+            "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContract,
-          "InputControl__HashCollisionWith0Value"
+          useCaseContractClient1,
+          "InputControl__NotAllowedInput"
         );
       });
     });

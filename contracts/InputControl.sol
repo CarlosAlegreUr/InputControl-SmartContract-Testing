@@ -3,8 +3,6 @@ pragma solidity ^0.8.9;
 
 /* Customed Errors */
 error InputControl__NotAllowedInput();
-error InputControl__InputAlreadyUsed();
-error InputControl__HashCollisionWith0Value();
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
@@ -31,9 +29,9 @@ contract InputControl {
      * Example => First call must be done with the input at index 0, then the one at index 1, then the index 2 value etc...
      */
     struct inputSequence {
-        uint256 numOfCalls;
         bytes32[] inputs;
-        uint256 actualCall;
+        uint256 inputsToUse;
+        uint256 currentCall;
     }
 
     /**
@@ -41,34 +39,35 @@ contract InputControl {
      * in any order. If desired to call twice the function with the same input, add the input
      * twice in the array and so on.
      *
-     * @dev The only reason why `inputToPosition` and `inputs` exist is that they are needed
-     * when client call getAllowedInputs() to be aware of which inputs are allowed and which
-     * ones are already used. Notice you can still control the inputs without this extra steps
-     * and make the contract cheaper to use, but then it would be less user-friendly.
+     * @dev The only reason why `inputs` exists is to be more 'off-chain-user-friendly' and let the user
+     * consult which inputs can still use.
+     *
+     * @dev The only reason why `inputToPosition` exists is for a better storage space management of `inputs`
+     * array when an input is used.
+     *
+     * @notice If anytime the input value is hashed and collides with 0 value in solidity, then inputs
+     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
+     * correct but off-chain user will have to take into account that one of the inputs is the colliding
+     * with 0 one when analyzing their allowed inputs.
      */
     struct inputUnordered {
-        mapping(bytes32 => bool) isInputUsed;
-        mapping(bytes32 => uint) inputToPosition;
         bytes32[] inputs;
+        uint256 inputsToUse;
+        mapping(bytes32 => uint) inputToTimesToUse;
+        mapping(bytes32 => uint) inputToPosition;
     }
 
     /* State Variables */
 
-    /**
-     * @notice String data type has been chosen instead of bytes for function signatures. Even thouogh
-     * bytes are more gas efficient string provides developer friendly and easier to understand code.
-     *
-     * Gas implications haven't been calculated yet if they are reasonably big in the future string will be
-     * changed for bytes type.
-     */
-    mapping(string => mapping(address => inputSequence)) s_funcSignatureToAllowedInputSequence;
-    mapping(string => mapping(address => inputUnordered)) s_funcSignatureToAllowedinputUnordered;
+    mapping(bytes4 => mapping(address => bool)) s_funcToIsSequence;
+    mapping(bytes4 => mapping(address => inputSequence)) s_funcToInputSequence;
+    mapping(bytes4 => mapping(address => inputUnordered)) s_funcToInputUnordered;
 
     /* Events */
 
     event InputControl__AllowedInputsGranted(
         address indexed client,
-        string indexed funcSig,
+        bytes4 indexed funcSelec,
         bytes32[] validInputs,
         bool isSequence
     );
@@ -76,60 +75,71 @@ contract InputControl {
     /* Modifiers */
 
     /**
-     * @dev Checks if `_client` can call `_funcSignature` with `_input`.
-     * If `_client` has used all it's calls, this modifier resets the
-     * inputSequence or inputUnordered for a `_client` in a `_funcSignature`.
+     * @dev Checks if `_callerAddress` can call `_funcSelec` with `_input`.
+     * If needed this modifier automatically takes charge of reseting variables' values
+     * or the whole data structure of inputSequence or inputUnordered for `_callerAddress`
+     * at `_funcSelec`.
      */
     modifier isAllowedInput(
-        string memory _funcSig,
-        address _clientAddress,
-        bytes32 _input,
-        bool _isSequence
+        bytes4 _funcSelec,
+        address _callerAddress,
+        bytes32 _input
     ) {
-        if (_isSequence) {
-            inputSequence memory seq = s_funcSignatureToAllowedInputSequence[
-                _funcSig
-            ][_clientAddress];
-            if (seq.numOfCalls != 0) {
-                if (seq.inputs[seq.actualCall] != _input) {
-                    revert InputControl__NotAllowedInput();
-                }
-
-                if ((seq.actualCall + 1) == seq.numOfCalls) {
-                    delete s_funcSignatureToAllowedInputSequence[_funcSig][
-                        _clientAddress
-                    ];
-                } else {
-                    s_funcSignatureToAllowedInputSequence[_funcSig][
-                        _clientAddress
-                    ].actualCall += 1;
-                }
-            } else {
+        if (s_funcToIsSequence[_funcSelec][_callerAddress] == true) {
+            if (
+                s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse ==
+                0
+            ) {
                 revert InputControl__NotAllowedInput();
+            }
+
+            if (
+                s_funcToInputSequence[_funcSelec][_callerAddress].inputs[
+                    s_funcToInputSequence[_funcSelec][_callerAddress]
+                        .currentCall
+                ] != _input
+            ) {
+                revert InputControl__NotAllowedInput();
+            }
+
+            s_funcToInputSequence[_funcSelec][_callerAddress].currentCall += 1;
+
+            s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse -= 1;
+
+            if (
+                s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse ==
+                0
+            ) {
+                delete s_funcToInputSequence[_funcSelec][_callerAddress];
+            } else {
+                delete s_funcToInputSequence[_funcSelec][_callerAddress].inputs[
+                        s_funcToInputSequence[_funcSelec][_callerAddress]
+                            .currentCall - 1
+                    ];
             }
         } else {
             if (
-                s_funcSignatureToAllowedinputUnordered[_funcSig][_clientAddress]
-                    .isInputUsed[_input] == true
+                s_funcToInputUnordered[_funcSelec][_callerAddress]
+                    .inputToTimesToUse[_input] == 0
             ) {
                 revert InputControl__NotAllowedInput();
-            } else {
-                if (
-                    s_funcSignatureToAllowedinputUnordered[_funcSig][
-                        _clientAddress
-                    ].inputToPosition[_input] == 0
-                ) {
-                    revert InputControl__NotAllowedInput();
-                }
-                s_funcSignatureToAllowedinputUnordered[_funcSig][_clientAddress]
-                    .isInputUsed[_input] = true;
-                delete s_funcSignatureToAllowedinputUnordered[_funcSig][
-                    _clientAddress
-                ].inputs[
-                        s_funcSignatureToAllowedinputUnordered[_funcSig][
-                            _clientAddress
-                        ].inputToPosition[_input] - 1
+            }
+
+            s_funcToInputUnordered[_funcSelec][_callerAddress]
+                .inputToTimesToUse[_input] -= 1;
+            s_funcToInputUnordered[_funcSelec][_callerAddress].inputsToUse -= 1;
+
+            if (
+                s_funcToInputUnordered[_funcSelec][_callerAddress]
+                    .inputsToUse != 0
+            ) {
+                delete s_funcToInputUnordered[_funcSelec][_callerAddress]
+                    .inputs[
+                        s_funcToInputUnordered[_funcSelec][_callerAddress]
+                            .inputToPosition[_input] - 1
                     ];
+            } else {
+                delete s_funcToInputUnordered[_funcSelec][_callerAddress];
             }
         }
         _;
@@ -141,26 +151,22 @@ contract InputControl {
     /* Getters */
 
     /**
-     * @return Allowed inputs from `_address` when calling `_funcSignature`. If `_isSequence` == true
-     * the indexes of inputs at the inputs array show in which order when calling `_funcSignature` those
-     * inputs' values can be used. If `_isSequence` == false then inputs at the array can be called in any
-     * order.
+     * @return Allowed inputs from `_callerAddress` when calling `_funcSignature`. If `_isSequence` == true
+     * it returns the inputs' sequence allowed, otherwise it returns the unordered inputs allowed.
      *
-     * If any of the values is the 0 value it means the value has been used.
+     * If any of the values is the 0 value it most probably mean the value has been used.
+     * Or in a really rare circumstance it means that you found the input that has a hashed value of 0.
      */
     function getAllowedInputs(
-        string memory _funcSignature,
-        address _address,
+        string calldata _funcSignature,
+        address _callerAddress,
         bool _isSequence
     ) public view returns (bytes32[] memory) {
+        bytes4 funcSelector = bytes4(keccak256(bytes(_funcSignature)));
         if (_isSequence) {
-            return
-                s_funcSignatureToAllowedInputSequence[_funcSignature][_address]
-                    .inputs;
+            return s_funcToInputSequence[funcSelector][_callerAddress].inputs;
         } else {
-            return
-                s_funcSignatureToAllowedinputUnordered[_funcSignature][_address]
-                    .inputs;
+            return s_funcToInputUnordered[funcSelector][_callerAddress].inputs;
         }
     }
 
@@ -175,72 +181,78 @@ contract InputControl {
      * See param specifications in allowInputsFor() docs.
      */
     function callAllowInputsFor(
-        address _client,
+        address _callerAddress,
         bytes32[] calldata _validInputs,
         string calldata _funcSignature,
         bool _isSequence
     ) public virtual {
-        allowInputsFor(_client, _validInputs, _funcSignature, _isSequence);
+        allowInputsFor(
+            _callerAddress,
+            _validInputs,
+            _funcSignature,
+            _isSequence
+        );
     }
 
     /**
-     * @dev Allows `_client` to call `_funcSignature` with `_validInputs`
+     * @dev Allows `_callerAddress` to call `_funcSignature` with `_validInputs`
      * values.
      *
      * @param _validInputs Each element must correspond to the equivalent of
      * executing in solidity the following functions with the inputs' values:
-     * validInputUniqueIdentifier = keccak256(abi.encodePacked(input))
+     * validInputUniqueIdentifier = keccak256(abi.encode(input))
      *
-     * @dev Maybe an input has a keccak256(abi.encodePacked(input)) == the empty
-     * value for bytes32 in solidity. This is the value that InputControl uses to
-     * know if an input in the inputUnordered structure has been used, so in the unlikely but
-     * posible case of "collision"; the input used for `_funcSig` should be slightly changed.
+     * @dev Maybe an input has a keccak256(abi.encode(input)) == the empty
+     * value for bytes32 in solidity. So in the unlikely but posible case of
+     * "collision" the 'off-chain-user' should take into account he is using the
+     * 'colliding' value when using getAllowedInputs().
      *
-     * @param _funcSignature should be a name you want to give to your function,
-     * could be any but for consistency I recommend putting the name of the function
-     * with it's datatypes =>  _funcSignature = funcName(arg1, arg2, ...)
+     * @param _funcSignature The function signature of a function is determined by
+     * its name and parameter datatypes:
+     *                      _funcSignature = funcName(arg1, arg2, ...)
      *
      * Example:
-     * For allowInputsFor() function => _funcSignature = "allowInputsFor(address, bytes32[], string)"
+     * For allowInputsFor() function => _funcSignature = "allowInputsFor(address,bytes32[],string,bool)"
      *
-     * @param _isSequence is a boolean. If `_isSequence` == true => You are saving allowed inputs
-     * in a sequence that must be followed when calling the function in order to use them. If == false;
-     * you are saving allowed inputs that will be able to be used in any order.
+     * @param _isSequence is a boolean.
+     *
+     * If `_isSequence` == true: You are saving allowed inputs in a sequence as the order they are in
+     * `_validInputs`. The order will have to be followed when calling the function in order to use them.
+     *
+     * If == false: you are saving allowed inputs that will be able to be used in any order.
      */
     function allowInputsFor(
-        address _client,
+        address _callerAddress,
         bytes32[] calldata _validInputs,
         string calldata _funcSignature,
         bool _isSequence
     ) internal {
-        for (uint256 i = 0; i < _validInputs.length; i++) {
-            if (
-                _validInputs[i] ==
-                0x0000000000000000000000000000000000000000000000000000000000000000
-            ) {
-                revert InputControl__HashCollisionWith0Value();
-            }
-        }
+        bytes4 funcSelector = bytes4(keccak256(bytes(_funcSignature)));
+
+        s_funcToIsSequence[funcSelector][_callerAddress] = _isSequence;
 
         if (_isSequence) {
-            s_funcSignatureToAllowedInputSequence[_funcSignature][_client]
-                .numOfCalls = _validInputs.length;
-            s_funcSignatureToAllowedInputSequence[_funcSignature][_client]
-                .actualCall = 0;
-            s_funcSignatureToAllowedInputSequence[_funcSignature][_client]
+            s_funcToInputSequence[funcSelector][_callerAddress]
+                .inputsToUse = _validInputs.length;
+            s_funcToInputSequence[funcSelector][_callerAddress].currentCall = 0;
+            s_funcToInputSequence[funcSelector][_callerAddress]
                 .inputs = _validInputs;
         } else {
-            s_funcSignatureToAllowedinputUnordered[_funcSignature][_client]
+            s_funcToInputUnordered[funcSelector][_callerAddress]
                 .inputs = _validInputs;
+            s_funcToInputUnordered[funcSelector][_callerAddress]
+                .inputsToUse = _validInputs.length;
             for (uint256 i = 0; i < _validInputs.length; i++) {
-                s_funcSignatureToAllowedinputUnordered[_funcSignature][_client]
+                s_funcToInputUnordered[funcSelector][_callerAddress]
                     .inputToPosition[_validInputs[i]] = i + 1;
+                s_funcToInputUnordered[funcSelector][_callerAddress]
+                    .inputToTimesToUse[_validInputs[i]] += 1;
             }
         }
 
         emit InputControl__AllowedInputsGranted(
-            _client,
-            _funcSignature,
+            _callerAddress,
+            funcSelector,
             _validInputs,
             _isSequence
         );

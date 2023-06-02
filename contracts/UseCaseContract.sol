@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-error UseCaseContract__OnlyIFMCanCallThisContract();
-
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
@@ -19,7 +17,10 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  *
  * @dev To use InputControl make your contract inherit InputControl and add the isAllowedInput()
  * modifier in the functions you desire to control their inputs. The '_input' parameter of the
- * modifier must be = keccak256(abi.encodePacked(inputs)).
+ * modifier must be = keccak256(abi.encode(inputs)).
+ *
+ * It's essential that you use abi.enconde() and not abi.encodePakced() because abi.encodePakced()
+ * can give the same output to different inputs.
  *
  * @dev Additionally you can override callAllowInputsFor() if you please mixing this functionality with,
  * for example, other useful ones like Owner or AccessControl contracts from OpenZeppelin.
@@ -29,33 +30,15 @@ contract UseCaseContract is InputControl, Ownable {
     address private s_someAddress;
 
     // Any function in your own smart contract.
-    function myFuncInSequence(
+    function myFunc(
         uint256 _newNumber,
         address _anAddress
     )
         external
         isAllowedInput(
-            "myFuncInSequence(uint256, address)", // <--- Look here!
+            bytes4(keccak256(bytes("myFunc(uint256,address)"))), // <--- Look here!
             msg.sender, // <--- Look here!
-            keccak256(abi.encodePacked(_newNumber, _anAddress)), // <--- Look here!
-            true // <--- Look here!
-        )
-    {
-        s_incrediblyAmazingNumber = _newNumber;
-        s_someAddress = _anAddress;
-    }
-
-    // Any function in your own smart contract.
-    function myFuncUnordered(
-        uint256 _newNumber,
-        address _anAddress
-    )
-        external
-        isAllowedInput(
-            "myFuncUnordered(uint256, address)",
-            msg.sender,
-            keccak256(abi.encodePacked(_newNumber, _anAddress)),
-            false // <--- Look here!
+            keccak256(abi.encode(_newNumber, _anAddress)) // <--- Look here!
         )
     {
         s_incrediblyAmazingNumber = _newNumber;

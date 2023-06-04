@@ -26,7 +26,7 @@ describe("InputControl.sol tests", function () {
 
   describe("Tests when inputs must be called in a sequence.", function () {
     describe("Internal functionalities tests.", function () {
-      it("Allowed input is stored and accessed correctly.", async () => {
+      it("Allowed input is stored and accessed correctly and isSequence map updates correctly.", async () => {
         let validInputs = await ethers.utils.solidityPack(
           ["uint256", "string"],
           ["2", "valid"]
@@ -52,10 +52,15 @@ describe("InputControl.sol tests", function () {
 
         let allowedInputs = await inputControlContract.getAllowedInputs(
           "func()",
-          client1,
-          true
+          client1
         );
         assert.equal(allowedInputs, validInputs);
+
+        let sequence = await inputControlContract.getIsSequence(
+          "func()",
+          client1
+        );
+        assert.equal(sequence, true);
 
         // Same values for same function but different client are stored correctly.
         await inputControlContract.callAllowInputsFor(
@@ -67,8 +72,7 @@ describe("InputControl.sol tests", function () {
 
         allowedInputs = await inputControlContract.getAllowedInputs(
           "func()",
-          client2,
-          true
+          client2
         );
         assert.equal(allowedInputs, validInputs);
       });
@@ -94,8 +98,7 @@ describe("InputControl.sol tests", function () {
 
         let allowedInputs = await inputControlContract.getAllowedInputs(
           "func()",
-          client1,
-          true
+          client1
         );
         assert.equal(allowedInputs[0], validInputs);
         assert.equal(allowedInputs[1], validInputs2);
@@ -237,10 +240,15 @@ describe("InputControl.sol tests", function () {
 
         let allowedInputs = await inputControlContract.getAllowedInputs(
           "func()",
-          client1,
-          false
+          client1
         );
         assert.equal(allowedInputs, validInputs);
+
+        let sequence = await inputControlContract.getIsSequence(
+          "func()",
+          client1
+        );
+        assert.equal(sequence, false);
 
         // Same values for same function but different client are stored correctly.
         await inputControlContract.callAllowInputsFor(
@@ -252,8 +260,7 @@ describe("InputControl.sol tests", function () {
 
         allowedInputs = await inputControlContract.getAllowedInputs(
           "func()",
-          client2,
-          false
+          client2
         );
         assert.equal(allowedInputs, validInputs);
       });
@@ -345,6 +352,94 @@ describe("InputControl.sol tests", function () {
         await expect(
           useCaseContractClient1.myFunc(
             1,
+            "0x000000000000000000000000000000000000dEaD"
+          )
+        ).revertedWithCustomError(
+          useCaseContractClient1,
+          "InputControl__NotAllowedInput"
+        );
+      });
+
+      it("Correct inputToTimesToUse mapping reset test.", async () => {
+        let validInputs = await ethers.utils.defaultAbiCoder.encode(
+          ["uint256", "address"],
+          [1, "0x000000000000000000000000000000000000dEaD"]
+        );
+        validInputs = await ethers.utils.keccak256(validInputs);
+
+        let validInputs2 = await ethers.utils.defaultAbiCoder.encode(
+          ["uint256", "address"],
+          ["3", "0x000000000000000000000000000000000000dEaD"]
+        );
+        validInputs2 = await ethers.utils.keccak256(validInputs2);
+
+        await useCaseContract.callAllowInputsFor(
+          client1,
+          [validInputs, validInputs2, validInputs],
+          "myFunc(uint256,address)",
+          false
+        );
+
+        // Permission given, should not revert.
+        await useCaseContractClient1.myFunc(
+          3,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        let number = await useCaseContractClient1.getNumber();
+        assert.equal(3, number);
+
+        await useCaseContractClient1.myFunc(
+          1,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        number = await useCaseContractClient1.getNumber();
+        assert.equal(1, number);
+
+        // Client didn't finish but new permissions overwritten.
+        await useCaseContract.callAllowInputsFor(
+          client1,
+          [validInputs, validInputs2, validInputs],
+          "myFunc(uint256,address)",
+          false
+        );
+
+        await useCaseContractClient1.myFunc(
+          1,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        number = await useCaseContractClient1.getNumber();
+        assert.equal(1, number);
+
+        await useCaseContractClient1.myFunc(
+          1,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        number = await useCaseContractClient1.getNumber();
+        assert.equal(1, number);
+
+        // Even though didn't use the last 1 value previously, as
+        // overwrites, should revert.
+        await expect(
+          useCaseContractClient1.myFunc(
+            1,
+            "0x000000000000000000000000000000000000dEaD"
+          )
+        ).revertedWithCustomError(
+          useCaseContractClient1,
+          "InputControl__NotAllowedInput"
+        );
+
+        await useCaseContractClient1.myFunc(
+          3,
+          "0x000000000000000000000000000000000000dEaD"
+        );
+        number = await useCaseContractClient1.getNumber();
+        assert.equal(3, number);
+
+        // Inputs already used, must revert.
+        await expect(
+          useCaseContractClient1.myFunc(
+            3,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(

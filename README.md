@@ -29,13 +29,20 @@ If further elaboration, development or testing please mention me in your work.
 
 ## 📰 Last Changes 📰
 
-- abi.encodePacked() was fatal error! Same inputs might have the same encoded value. Now using abi.encode().
-- Now you can decide wheter a function allows inputs in ordered or unordered manner even after deployment.
-- Handle collision with 0 value not needed: now map to bool indicates if input has already been used.
-- Better memory management when unordered inputs used.
-- Function selectors now are bytes4 instead of strings, like actual func selectors in ETH.
-- Shortened variable names in code.
-- Tests improved.
+- Fixed bug, inputToTimesToUse mapping now is overwritten correctly. In previous version it could overflow and/or lead to unexpected behaviours.
+
+- Added getIsSequence() function.
+- Deleted argument \_isSequence ins getAllowedInputs().
+- New tests in tests' repository.
+
+## 🎉 FUTURE IMPROVEMENTS 🎉
+
+- Improve and review code and tests. (static analysis, audit...)
+
+- Test in testnet.
+- Create modifier locker. Make it more flexible and be able to activate or deactivate InputControl in your functions.
+- Check if worth it to create better option: adding more allowed inputs to client who hasn't used all of them. Now it overwrites.
+- Check gas implications of changing 4 bytes function selector to 32 bytes hashed function signatures.
 
 ## 📨 Contact 📨
 

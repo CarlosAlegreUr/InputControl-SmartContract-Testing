@@ -120,13 +120,18 @@ contract InputControl {
         } else {
             if (
                 s_funcToInputUnordered[_funcSelec][_callerAddress]
-                    .inputToTimesToUse[_input] == 0
+                    .inputToTimesToUse[_input] ==
+                0 ||
+                s_funcToInputUnordered[_funcSelec][_callerAddress]
+                    .inputsToUse ==
+                0
             ) {
                 revert InputControl__NotAllowedInput();
             }
 
             s_funcToInputUnordered[_funcSelec][_callerAddress]
                 .inputToTimesToUse[_input] -= 1;
+
             s_funcToInputUnordered[_funcSelec][_callerAddress].inputsToUse -= 1;
 
             if (
@@ -151,19 +156,39 @@ contract InputControl {
     /* Getters */
 
     /**
-     * @return Allowed inputs from `_callerAddress` when calling `_funcSignature`. If `_isSequence` == true
-     * it returns the inputs' sequence allowed, otherwise it returns the unordered inputs allowed.
+     * @return Returns wheter the `_callerAddress` must use intputs for `_funcSignature` in a
+     * sequence or an unordered manner.
+     */
+    function getIsSequence(
+        string calldata _funcSignature,
+        address _callerAddress
+    ) public view returns (bool) {
+        bytes4 funcSelec = bytes4(keccak256(bytes(_funcSignature)));
+        return s_funcToIsSequence[funcSelec][_callerAddress];
+    }
+
+    /**
+     * @return Allowed inputs from `_callerAddress` when calling `_funcSignature`.
      *
-     * If any of the values is the 0 value it most probably mean the value has been used.
-     * Or in a really rare circumstance it means that you found the input that has a hashed value of 0.
+     * @notice If any of the values is the 0 value it most probably mean the value has been used.
+     * Or in a really rare circumstance it means that your input has a hashed value of 0
+     * and you won't be able to relize wheter it's used or not by seeing the 0 value
+     * in the array.
+     *
+     * Thats why I recommend checking before calling this contract if any
+     * of the inputs is hashed to 0, in order to later know precisely which inputs have
+     * already been used.
+     *
+     * The contract logic will work no matter what the hash of your input is though, this
+     * reommenation is just for making sure you always can precisely check what someone has or hasn't
+     * used in the contract.
      */
     function getAllowedInputs(
         string calldata _funcSignature,
-        address _callerAddress,
-        bool _isSequence
+        address _callerAddress
     ) public view returns (bytes32[] memory) {
         bytes4 funcSelector = bytes4(keccak256(bytes(_funcSignature)));
-        if (_isSequence) {
+        if (s_funcToIsSequence[funcSelector][_callerAddress]) {
             return s_funcToInputSequence[funcSelector][_callerAddress].inputs;
         } else {
             return s_funcToInputUnordered[funcSelector][_callerAddress].inputs;
@@ -196,7 +221,8 @@ contract InputControl {
 
     /**
      * @dev Allows `_callerAddress` to call `_funcSignature` with `_validInputs`
-     * values.
+     * values. If `_callerAddress` has some `_validInputs` to call left but this
+     * function is called to give new ones, old permission will be overwritten.
      *
      * @param _validInputs Each element must correspond to the equivalent of
      * executing in solidity the following functions with the inputs' values:
@@ -232,16 +258,25 @@ contract InputControl {
         s_funcToIsSequence[funcSelector][_callerAddress] = _isSequence;
 
         if (_isSequence) {
+            // Saving values in a inputSequence structure
             s_funcToInputSequence[funcSelector][_callerAddress]
                 .inputsToUse = _validInputs.length;
             s_funcToInputSequence[funcSelector][_callerAddress].currentCall = 0;
             s_funcToInputSequence[funcSelector][_callerAddress]
                 .inputs = _validInputs;
         } else {
+            // Saving values in an inputUnordered structure
             s_funcToInputUnordered[funcSelector][_callerAddress]
                 .inputs = _validInputs;
             s_funcToInputUnordered[funcSelector][_callerAddress]
                 .inputsToUse = _validInputs.length;
+
+            // Resets old map values
+            for (uint256 i = 0; i < _validInputs.length; i++) {
+                s_funcToInputUnordered[funcSelector][_callerAddress]
+                    .inputToTimesToUse[_validInputs[i]] = 0;
+            }
+
             for (uint256 i = 0; i < _validInputs.length; i++) {
                 s_funcToInputUnordered[funcSelector][_callerAddress]
                     .inputToPosition[_validInputs[i]] = i + 1;

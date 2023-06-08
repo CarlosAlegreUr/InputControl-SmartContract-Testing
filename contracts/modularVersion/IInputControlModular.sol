@@ -12,7 +12,8 @@ pragma solidity ^0.8.9;
  * @dev Check the InputControlModular.sol implementation here:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/InputControlModular.sol
  *
- * @dev Check an usecase at UseCaseContractModular.sol on the github repo:
+ * @dev Check an usecase at UseCaseContractModular.sol where it's also shown how to mix this
+ * contract with other useful ones like Ownable by OpenZeppelin:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/UseCaseModular.sol
  *
  */
@@ -71,13 +72,24 @@ interface IInputControlModular {
     ) external;
 
     /**
+     * @dev Must be only callable by current admin. 
+     *
+     * @notice In order for allowInputsFor() not be callable by who knows who
+     * we need an admin we control. For that there is a simple admin implementation
+     * required. Check it out in InputControlModular.sol.
+     * 
+     * First admin will be the deployer of the interface implementation and then the
+     * deployer will be able to update it to the desired contract if needed using this 
+     * function.
+     *
+     * @param _nextAdmin is the next desired admin.
+     */
+    function setAdmin(address _nextAdmin) external;
+
+    /**
      * @dev Allows `_callerAddress` to call `_funcSignature` with `_validInputs`
      * values. If `_callerAddress` has some `_validInputs` to call left but this
      * function is called to give new ones, old permission will be overwritten.
-     * 
-     * @notice In the interface implementation you must use modifiers like
-     * AccessControl or Ownable by OpenZeppelin if you want to restrict who can
-     * give input permissions to your functions.
      *
      * @param _validInputs Each element must correspond to the equivalent of
      * executing in solidity the following functions with the inputs' values:

@@ -7,8 +7,9 @@ describe("InputControlModular.sol tests", function () {
     client2,
     inputControlModularContract,
     allowedInputsEventFilter,
+    useCaseModularContract,
     useCaseContract,
-    useCaseContractClient1;
+    useCaseContractModularClient1;
 
   beforeEach(async function () {
     const {
@@ -20,8 +21,13 @@ describe("InputControlModular.sol tests", function () {
     client1 = c1;
     client2 = c2;
     inputControlModularContract = await ethers.getContract(
-      "UseCaseContractModular"
+      "InputControlModular"
     );
+    useCaseModularContract = await ethers.getContract(
+      "UseCaseContractModular",
+      deployer
+    );
+
     allowedInputsEventFilter = await inputControlModularContract.filters
       .InputControlModular__AllowedInputsGranted;
   });
@@ -36,7 +42,7 @@ describe("InputControlModular.sol tests", function () {
         validInputs = await ethers.utils.keccak256(validInputs);
 
         // Values for functions are stored correctly and event is emitted.
-        let txResponse = await inputControlModularContract.callAllowInputsFor(
+        let txResponse = await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs],
           "func()",
@@ -65,7 +71,7 @@ describe("InputControlModular.sol tests", function () {
         assert.equal(sequence, true);
 
         // Same values for same function but different client are stored correctly.
-        await inputControlModularContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client2,
           [validInputs],
           "func()",
@@ -91,7 +97,7 @@ describe("InputControlModular.sol tests", function () {
         validInputs = await ethers.utils.keccak256(validInputs);
         validInputs2 = await ethers.utils.keccak256(validInputs2);
 
-        await inputControlModularContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2],
           "func()",
@@ -109,9 +115,8 @@ describe("InputControlModular.sol tests", function () {
 
     describe("InputControlModular functionalities implemented in other contract tests.", function () {
       beforeEach(async function () {
-        useCaseContract = await ethers.getContract("UseCaseContract", deployer);
-        useCaseContractClient1 = await ethers.getContract(
-          "UseCaseContract",
+        useCaseContractModularClient1 = await ethers.getContract(
+          "UseCaseContractModular",
           client1
         );
       });
@@ -131,16 +136,16 @@ describe("InputControlModular.sol tests", function () {
 
         // Permission not given yet, must revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
-        await useCaseContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2, validInputs],
           "myFunc(uint256,address)",
@@ -149,65 +154,65 @@ describe("InputControlModular.sol tests", function () {
 
         // Permission given but calling in different order, must revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             3,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
         // Calling in correct order, should execute correctly.
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        let number = await useCaseContractClient1.getNumber();
+        let number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           3,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(3, number);
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
         // After calling correctly, if calling again must revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             3,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
       });
@@ -224,7 +229,7 @@ describe("InputControlModular.sol tests", function () {
         validInputs = await ethers.utils.keccak256(validInputs);
 
         // Values for functions are stored correctly and event is emitted.
-        let txResponse = await inputControlModularContract.callAllowInputsFor(
+        let txResponse = await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs],
           "func()",
@@ -253,7 +258,7 @@ describe("InputControlModular.sol tests", function () {
         assert.equal(sequence, false);
 
         // Same values for same function but different client are stored correctly.
-        await inputControlModularContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client2,
           [validInputs],
           "func()",
@@ -270,9 +275,8 @@ describe("InputControlModular.sol tests", function () {
 
     describe("InputControlModular functionalities implemented in other contract tests.", function () {
       beforeEach(async function () {
-        useCaseContract = await ethers.getContract("UseCaseContract", deployer);
-        useCaseContractClient1 = await ethers.getContract(
-          "UseCaseContract",
+        useCaseContractModularClient1 = await ethers.getContract(
+          "UseCaseContractModular",
           client1
         );
       });
@@ -292,16 +296,16 @@ describe("InputControlModular.sol tests", function () {
 
         // Permission not given yet, must revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
-        await useCaseContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2, validInputs],
           "myFunc(uint256,address)",
@@ -309,55 +313,55 @@ describe("InputControlModular.sol tests", function () {
         );
 
         // Permission given, should not revert.
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           3,
           "0x000000000000000000000000000000000000dEaD"
         );
-        let number = await useCaseContractClient1.getNumber();
+        let number = await useCaseContractModularClient1.getNumber();
         assert.equal(3, number);
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
         // Inputs already used, must revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             3,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
       });
@@ -375,7 +379,7 @@ describe("InputControlModular.sol tests", function () {
         );
         validInputs2 = await ethers.utils.keccak256(validInputs2);
 
-        await useCaseContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2, validInputs],
           "myFunc(uint256,address)",
@@ -383,69 +387,69 @@ describe("InputControlModular.sol tests", function () {
         );
 
         // Permission given, should not revert.
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           3,
           "0x000000000000000000000000000000000000dEaD"
         );
-        let number = await useCaseContractClient1.getNumber();
+        let number = await useCaseContractModularClient1.getNumber();
         assert.equal(3, number);
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
         // Client didn't finish but new permissions overwritten.
-        await useCaseContract.callAllowInputsFor(
+        await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2, validInputs],
           "myFunc(uint256,address)",
           false
         );
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           1,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(1, number);
 
         // Even though didn't use the last 1 value previously, as
         // overwrites, should revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             1,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
 
-        await useCaseContractClient1.myFunc(
+        await useCaseContractModularClient1.myFunc(
           3,
           "0x000000000000000000000000000000000000dEaD"
         );
-        number = await useCaseContractClient1.getNumber();
+        number = await useCaseContractModularClient1.getNumber();
         assert.equal(3, number);
 
         // Inputs already used, must revert.
         await expect(
-          useCaseContractClient1.myFunc(
+          useCaseContractModularClient1.myFunc(
             3,
             "0x000000000000000000000000000000000000dEaD"
           )
         ).revertedWithCustomError(
-          useCaseContractClient1,
+          inputControlModularContract,
           "InputControlModular__NotAllowedInput"
         );
       });

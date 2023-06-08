@@ -61,7 +61,7 @@ contract UseCaseContractModular is Ownable {
         bytes32[] calldata _validInputs,
         string calldata _funcSignature,
         bool _isSequence
-    ) internal onlyOwner /* <---- Look here! */ {
+    ) external onlyOwner /* <---- Look here! */ {
         i_inputControl.allowInputsFor(
             _callerAddress,
             _validInputs,

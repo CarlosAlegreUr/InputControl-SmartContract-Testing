@@ -2,8 +2,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const inputControlModularContract = await deployments.get(
-    "InputControlModular"
+  const inputControlModularContract = await ethers.getContract(
+    "InputControlModular",
+    deployer
   );
 
   await deploy("UseCaseContractModular", {
@@ -12,6 +13,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log: true,
     waitConfirmations: 1,
   });
+
+  const useCaseContract = await deployments.get("UseCaseContractModular");
+
+  await inputControlModularContract.setAdmin(useCaseContract.address);
 };
 
 module.exports.tags = ["all", "useCaseModular"];

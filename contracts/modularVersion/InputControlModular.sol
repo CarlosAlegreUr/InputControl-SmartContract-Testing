@@ -20,8 +20,8 @@ import "./IInputControlModular.sol";
  * 
  * @notice Make sure to implement a modifier that controls the acces to allowInputsFor().
  * For that you can use AccessControl or Ownable from OpenZeppelin or even build your own one.
- * In this implementation I've built a simple one where the deployer address becomes the one who
- * gratns control over grating inputs' permissions.
+ * In this implementation I've built a simple one where the address passed as argument when deploying
+ * becomes the one who gratns control over grating inputs' permissions.
  *
  * @dev To check an usecase at UseCaseContractModular.sol:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/UseCaseContractModular.sol
@@ -69,20 +69,20 @@ contract InputControlModular is IInputControlModular {
     }
 
     /* State Variables */
-    address immutable i_ADMIN_ADDRESS;
+    address private s_ADMIN_ADDRESS;
 
     mapping(bytes4 => mapping(address => bool)) s_funcToIsSequence;
     mapping(bytes4 => mapping(address => inputSequence)) s_funcToInputSequence;
     mapping(bytes4 => mapping(address => inputUnordered)) s_funcToInputUnordered;
 
-    constructor(address _adminAddress) {
-        i_ADMIN_ADDRESS = _adminAddress;
+    constructor() {
+        s_ADMIN_ADDRESS = msg.sender;
     }
 
     /* Modifiers */
 
     modifier onlyAdmin() {
-        if (msg.sender != i_ADMIN_ADDRESS) {
+        if (msg.sender != s_ADMIN_ADDRESS) {
             revert InputControlModular__OnlyAdmin();
         }
         _;
@@ -118,6 +118,9 @@ contract InputControlModular is IInputControlModular {
     }
 
     /* External functions */
+    function setAdmin(address _nextAdmin) external onlyAdmin {
+        s_ADMIN_ADDRESS = _nextAdmin;
+    }
 
     function isAllowedInput(
         bytes4 _funcSelec,

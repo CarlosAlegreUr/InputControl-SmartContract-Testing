@@ -29,10 +29,10 @@ If further elaboration, development or testing please mention me in your work.
 
 ## 📰 Last Changes 📰
 
+- Added new modular/interface implementation. In some codes inheriting InputControl could make the contract too big to be deployed. Inheriting implementation still available in the package though :D.
+
 - Fixed bug, inputToTimesToUse mapping now is overwritten correctly. In previous version it could overflow and/or lead to unexpected behaviours.
 
-- Added getIsSequence() function.
-- Deleted argument \_isSequence ins getAllowedInputs().
 - New tests in tests' repository.
 
 ## 🎉 FUTURE IMPROVEMENTS 🎉
@@ -40,6 +40,7 @@ If further elaboration, development or testing please mention me in your work.
 - Improve and review code and tests. (static analysis, audit...)
 
 - Test in testnet.
+- Improve code quality in the tests. (Now it's a mess [ :,( ] )
 - Create modifier locker. Make it more flexible and be able to activate or deactivate InputControl in your functions.
 - Check if worth it to create better option: adding more allowed inputs to client who hasn't used all of them. Now it overwrites.
 - Check gas implications of changing 4 bytes function selector to 32 bytes hashed function signatures.

@@ -8,8 +8,9 @@ describe("InputControlModular.sol tests", function () {
     inputControlModularContract,
     allowedInputsEventFilter,
     useCaseModularContract,
-    useCaseContract,
-    useCaseContractModularClient1;
+    useCaseContractModularClient1,
+    validInputs,
+    validInputs2;
 
   beforeEach(async function () {
     const {
@@ -30,17 +31,23 @@ describe("InputControlModular.sol tests", function () {
 
     allowedInputsEventFilter = await inputControlModularContract.filters
       .InputControlModular__AllowedInputsGranted;
+
+    validInputs = await ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "address"],
+      [1, "0x000000000000000000000000000000000000dEaD"]
+    );
+    validInputs = await ethers.utils.keccak256(validInputs);
+
+    validInputs2 = await ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "address"],
+      ["3", "0x000000000000000000000000000000000000dEaD"]
+    );
+    validInputs2 = await ethers.utils.keccak256(validInputs2);
   });
 
   describe("Tests when inputs must be called in a sequence.", function () {
     describe("Internal functionalities tests.", function () {
       it("Allowed input is stored and accessed correctly and isSequence map updates correctly.", async () => {
-        let validInputs = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["2", "valid"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
         // Values for functions are stored correctly and event is emitted.
         let txResponse = await useCaseModularContract.giveInputPermission(
           client1,
@@ -86,17 +93,6 @@ describe("InputControlModular.sol tests", function () {
       });
 
       it("When allowing multiple calls with inputs' sequence, array stored and accessed correctly.", async () => {
-        let validInputs = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["2", "valid"]
-        );
-        let validInputs2 = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["3", "valid"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-        validInputs2 = await ethers.utils.keccak256(validInputs2);
-
         await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2],
@@ -122,18 +118,6 @@ describe("InputControlModular.sol tests", function () {
       });
 
       it("Using InputControlModular in other contract.", async () => {
-        let validInputs = await ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          [1, "0x000000000000000000000000000000000000dEaD"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
-        let validInputs2 = await ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          ["3", "0x000000000000000000000000000000000000dEaD"]
-        );
-        validInputs2 = await ethers.utils.keccak256(validInputs2);
-
         // Permission not given yet, must revert.
         await expect(
           useCaseContractModularClient1.myFunc(
@@ -222,12 +206,6 @@ describe("InputControlModular.sol tests", function () {
   describe("Tests when inputs can be called in any order.", function () {
     describe("Internal functionalities tests.", function () {
       it("Allowed input is stored and accessed correctly.", async () => {
-        let validInputs = await ethers.utils.solidityPack(
-          ["uint256", "string"],
-          ["2", "valid"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
         // Values for functions are stored correctly and event is emitted.
         let txResponse = await useCaseModularContract.giveInputPermission(
           client1,
@@ -281,19 +259,27 @@ describe("InputControlModular.sol tests", function () {
         );
       });
 
+      it("Only Admin can call.", async () => {
+        // Admin now is UseCaseContract, should revert if calling with deployer.
+        inputControlModularContract = await ethers.getContract(
+          "InputControlModular",
+          deployer
+        );
+
+        await expect(
+          inputControlModularContract.allowInputsFor(
+            client1,
+            [validInputs, validInputs2, validInputs],
+            "myFunc(uint256,address)",
+            false
+          )
+        ).revertedWithCustomError(
+          inputControlModularContract,
+          "InputControlModular__OnlyAdmin"
+        );
+      });
+
       it("Using InputControlModular in other contract.", async () => {
-        let validInputs = await ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          [1, "0x000000000000000000000000000000000000dEaD"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
-        let validInputs2 = await ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          ["3", "0x000000000000000000000000000000000000dEaD"]
-        );
-        validInputs2 = await ethers.utils.keccak256(validInputs2);
-
         // Permission not given yet, must revert.
         await expect(
           useCaseContractModularClient1.myFunc(
@@ -367,18 +353,6 @@ describe("InputControlModular.sol tests", function () {
       });
 
       it("Correct inputToTimesToUse mapping reset test.", async () => {
-        let validInputs = await ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          [1, "0x000000000000000000000000000000000000dEaD"]
-        );
-        validInputs = await ethers.utils.keccak256(validInputs);
-
-        let validInputs2 = await ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          ["3", "0x000000000000000000000000000000000000dEaD"]
-        );
-        validInputs2 = await ethers.utils.keccak256(validInputs2);
-
         await useCaseModularContract.giveInputPermission(
           client1,
           [validInputs, validInputs2, validInputs],

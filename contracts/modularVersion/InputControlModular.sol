@@ -14,14 +14,18 @@ import "./IInputControlModular.sol";
  * @title Input Control Modular.
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @notice InputControlModular is an implementation of InputControl created for cases
- * where inheriting the traditional InputControl contract results in a too large contract
- * size to be deployed error.
+ * @notice InputControlModular is an implementation of IInputControlModular. It's been reated 
+ * for cases where inheriting the traditional InputControl contract results in a too large 
+ * contract size to be deployed error.
  * 
  * @notice Make sure to implement a modifier that controls the acces to allowInputsFor().
- * For that you can use AccessControl or Ownable from OpenZeppelin or even build your own one.
- * In this implementation I've built a simple one where the address passed as argument when deploying
- * becomes the one who gratns control over grating inputs' permissions.
+ * For that in this implementation I've built a simple admin creaton and management code 
+ * where the deployer address becomes the one who grants becomes admin. And admin in this
+ * implementation is the only one who can pass the admin role to other address.
+ * 
+ * I think this option is better because it makes InputControlModular decoupled from other packages,
+ * so to better implement AccessControl or Ownable from OpenZeppelin wiht InputControlModular check 
+ * the UseCaseContract link just down below:
  *
  * @dev To check an usecase at UseCaseContractModular.sol:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/UseCaseContractModular.sol
@@ -37,7 +41,8 @@ contract InputControlModular is IInputControlModular {
      * @dev inputSequence struct allows the user tho call any input in the inputs array
      * but it has to be done in the order they are indexed.
      *
-     * Example => First call must be done with the input at index 0, then the one at index 1, then the index 2 value etc...
+     * Example => First call must be done with the input at index 0, then the one at index 1,
+     * then the index 2 value etc...
      */
     struct inputSequence {
         bytes32[] inputs;
@@ -47,11 +52,11 @@ contract InputControlModular is IInputControlModular {
 
     /**
      * @dev inputUnordered struct allows the user to call any input in the inputs array
-     * in any order. If desired to call twice the function with the same input, add the input
-     * twice in the array and so on.
+     * in any order. If desired to call the function with the same input twice, add the input
+     * 2 times in the array and so on.
      *
      * @dev The only reason why `inputs` exists is to be more 'off-chain-user-friendly' and let the user
-     * consult which inputs can still use.
+     * consult which inputs they can still use.
      *
      * @dev The only reason why `inputToPosition` exists is for a better storage space management of `inputs`
      * array when an input is used.
@@ -95,7 +100,8 @@ contract InputControlModular is IInputControlModular {
 
     /**
      * @dev See documentation for the following functions in IInputControlModular.sol:
-     * (add link)
+     * (https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/IInputControlModular.sol
+)
      */
     function getIsSequence(
         string calldata _funcSignature,

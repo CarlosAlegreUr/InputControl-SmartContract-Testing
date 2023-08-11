@@ -7,19 +7,11 @@
 
 <hr/>
 
-# Tests and simple implementation for InputControl contract.
+# Tests for the different InputControl implementations.
 
 Check the contract code here => [(click)](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
 
 Check the npm repository => [(click)](https://www.npmjs.com/package/input-control-contract)
-
-I asked ChatGPT about it, this was it's answer:
-
-`Overall, the InputControl smart contract looks well-structured and easy to understand. However, there are some areas where improvements could be made to enhance its functionality and usability.`
-
-After showing ChatGPT the UseCaseContract, it answered:
-
-`Based on the presented code, it seems that the previous improvement recommendations are not relevant anymore as they have been addressed in this version of the contract. However, it is always good practice to keep reviewing and improving the code to ensure it is secure and efficient. `
 
 If further elaboration, development or testing please mention me in your work.
 
@@ -29,21 +21,15 @@ If further elaboration, development or testing please mention me in your work.
 
 ## 📰 Last Changes 📰
 
-- Added new modular/interface implementation. In some codes inheriting InputControl could make the contract too big to be deployed. Inheriting implementation still available in the package though :D.
-
-- Fixed bug, inputToTimesToUse mapping now is overwritten correctly. In previous version it could overflow and/or lead to unexpected behaviours.
-
-- New tests in tests' repository.
+- Admin based (centralized) or nor admin based (decentralized) version are in develompent. All code has been refactored, old test need to be refactored too.
 
 ## 🎉 FUTURE IMPROVEMENTS 🎉
 
-- Improve and review code and tests. (static analysis, audit...)
+- Write the new test for the refactor contract.
 
 - Test in testnet.
-- Improve code quality in the tests. (Now it's a mess [ :,( ] )
-- Create modifier locker. Make it more flexible and be able to activate or deactivate InputControl in your functions.
-- Check if worth it to create better option: adding more allowed inputs to client who hasn't used all of them. Now it overwrites.
-- Check gas implications of changing 4 bytes function selector to 32 bytes hashed function signatures.
+
+- Audit.
 
 ## 📨 Contact 📨
 

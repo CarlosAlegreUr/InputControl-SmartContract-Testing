@@ -45,11 +45,7 @@ contract UseCaseContractModular is Ownable {
     }
 
     // Look here!
-    modifier checkInputControl(
-        bytes4 _funcSelec,
-        address _callerAddress,
-        bytes32 _input
-    ) {
+    modifier checkInputControl(bytes4 _funcSelec, address _callerAddress, bytes32 _input) {
         i_inputControl.isAllowedInput(_funcSelec, _callerAddress, _input);
         _;
     }
@@ -62,19 +58,15 @@ contract UseCaseContractModular is Ownable {
         string calldata _funcSignature,
         bool _isSequence
     ) external onlyOwner /* <---- Look here! */ {
-        i_inputControl.allowInputsFor(
-            _callerAddress,
-            _validInputs,
-            _funcSignature,
-            _isSequence
-        );
+        i_inputControl.allowInputsFor(_callerAddress, _validInputs, _funcSignature, _isSequence);
+    }
+
+    function changeAdmin(address _newAdmin) external onlyOwner {
+        i_inputControl.setAdmin(_newAdmin);
     }
 
     // Any function in your own smart contract.
-    function myFunc(
-        uint256 _newNumber,
-        address _anAddress
-    )
+    function myFunc(uint256 _newNumber, address _anAddress)
         external
         checkInputControl(
             bytes4(keccak256(bytes("myFunc(uint256,address)"))), //<---- Look here!

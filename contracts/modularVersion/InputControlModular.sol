@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 /* Customed Errors */
 error InputControlModular__NotAllowedInput();
 error InputControlModular__OnlyAdmin();
+error InputControlModular__CantMakeZeroAddressAdmin();
 
 import "./IInputControlModular.sol";
 
@@ -14,25 +15,25 @@ import "./IInputControlModular.sol";
  * @title Input Control Modular.
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @notice InputControlModular is an implementation of IInputControlModular. It's been reated 
- * for cases where inheriting the traditional InputControl contract results in a too large 
+ * @notice InputControlModular is an implementation of IInputControlModular. It's been reated
+ * for cases where inheriting the traditional InputControl contract results in a too large
  * contract size to be deployed error.
- * 
+ *
  * @notice Make sure to implement a modifier that controls the acces to allowInputsFor().
- * For that in this implementation I've built a simple admin creaton and management code 
+ * For that in this implementation I've built a simple admin creaton and management code
  * where the deployer address becomes the one who grants becomes admin. And admin in this
  * implementation is the only one who can pass the admin role to other address.
- * 
+ *
  * I think this option is better because it makes InputControlModular decoupled from other packages,
- * so to better implement AccessControl or Ownable from OpenZeppelin wiht InputControlModular check 
+ * so to better implement AccessControl or Ownable from OpenZeppelin wiht InputControlModular check
  * the UseCaseContract link just down below:
  *
  * @dev To check an usecase at UseCaseContractModular.sol:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/UseCaseContractModular.sol
-
+ *
  * @dev To check the classic InputControl.sol contract that works with inheritance:
  * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/InputControl.sol
- * 
+ *
  */
 contract InputControlModular is IInputControlModular {
     /* Types */
@@ -69,25 +70,27 @@ contract InputControlModular is IInputControlModular {
     struct inputUnordered {
         bytes32[] inputs;
         uint256 inputsToUse;
-        mapping(bytes32 => uint) inputToTimesToUse;
-        mapping(bytes32 => uint) inputToPosition;
+        mapping(bytes32 => uint256) inputToTimesToUse;
+        mapping(bytes32 => uint256) inputToPosition;
     }
 
     /* State Variables */
-    address private s_ADMIN_ADDRESS;
+    mapping(address => bool) s_isAdmin;
 
     mapping(bytes4 => mapping(address => bool)) s_funcToIsSequence;
     mapping(bytes4 => mapping(address => inputSequence)) s_funcToInputSequence;
     mapping(bytes4 => mapping(address => inputUnordered)) s_funcToInputUnordered;
 
-    constructor() {
-        s_ADMIN_ADDRESS = msg.sender;
+    constructor(bool hasAdmin) {
+        if (hasAdmin) {
+            s_isAdmin[msg.sender] = true;
+        }
     }
 
     /* Modifiers */
 
     modifier onlyAdmin() {
-        if (msg.sender != s_ADMIN_ADDRESS) {
+        if (!s_isAdmin[msg.sender]) {
             revert InputControlModular__OnlyAdmin();
         }
         _;
@@ -101,20 +104,18 @@ contract InputControlModular is IInputControlModular {
     /**
      * @dev See documentation for the following functions in IInputControlModular.sol:
      * (https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/IInputControlModular.sol
-)
+     * )
      */
-    function getIsSequence(
-        string calldata _funcSignature,
-        address _callerAddress
-    ) public view returns (bool) {
+    function getIsSequence(string calldata _funcSignature, address _callerAddress) public view returns (bool) {
         bytes4 funcSelec = bytes4(keccak256(bytes(_funcSignature)));
         return s_funcToIsSequence[funcSelec][_callerAddress];
     }
 
-    function getAllowedInputs(
-        string calldata _funcSignature,
-        address _callerAddress
-    ) public view returns (bytes32[] memory) {
+    function getAllowedInputs(string calldata _funcSignature, address _callerAddress)
+        public
+        view
+        returns (bytes32[] memory)
+    {
         bytes4 funcSelector = bytes4(keccak256(bytes(_funcSignature)));
         if (s_funcToIsSequence[funcSelector][_callerAddress]) {
             return s_funcToInputSequence[funcSelector][_callerAddress].inputs;
@@ -123,29 +124,27 @@ contract InputControlModular is IInputControlModular {
         }
     }
 
-    /* External functions */
-    function setAdmin(address _nextAdmin) external onlyAdmin {
-        s_ADMIN_ADDRESS = _nextAdmin;
+    function getIsAdmin(address caller) public view returns (bool) {
+        return s_isAdmin[caller];
     }
 
-    function isAllowedInput(
-        bytes4 _funcSelec,
-        address _callerAddress,
-        bytes32 _input
-    ) external {
+    /* External functions */
+    function setAdmin(address _newAdmin, bool _newIsAdmin) external onlyAdmin {
+        if (_newAdmin == address(0)) {
+            revert InputControlModular__CantMakeZeroAddressAdmin();
+        }
+        s_isAdmin[_newAdmin] = _newIsAdmin;
+    }
+
+    function isAllowedInput(bytes4 _funcSelec, address _callerAddress, bytes32 _input) external {
         if (s_funcToIsSequence[_funcSelec][_callerAddress] == true) {
-            if (
-                s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse ==
-                0
-            ) {
+            if (s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse == 0) {
                 revert InputControlModular__NotAllowedInput();
             }
 
             if (
-                s_funcToInputSequence[_funcSelec][_callerAddress].inputs[
-                    s_funcToInputSequence[_funcSelec][_callerAddress]
-                        .currentCall
-                ] != _input
+                s_funcToInputSequence[_funcSelec][_callerAddress].inputs[s_funcToInputSequence[_funcSelec][_callerAddress]
+                    .currentCall] != _input
             ) {
                 revert InputControlModular__NotAllowedInput();
             }
@@ -154,10 +153,7 @@ contract InputControlModular is IInputControlModular {
 
             s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse -= 1;
 
-            if (
-                s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse ==
-                0
-            ) {
+            if (s_funcToInputSequence[_funcSelec][_callerAddress].inputsToUse == 0) {
                 delete s_funcToInputSequence[_funcSelec][_callerAddress];
             } else {
                 delete s_funcToInputSequence[_funcSelec][_callerAddress].inputs[
@@ -167,25 +163,17 @@ contract InputControlModular is IInputControlModular {
             }
         } else {
             if (
-                s_funcToInputUnordered[_funcSelec][_callerAddress]
-                    .inputToTimesToUse[_input] ==
-                0 ||
-                s_funcToInputUnordered[_funcSelec][_callerAddress]
-                    .inputsToUse ==
-                0
+                s_funcToInputUnordered[_funcSelec][_callerAddress].inputToTimesToUse[_input] == 0
+                    || s_funcToInputUnordered[_funcSelec][_callerAddress].inputsToUse == 0
             ) {
                 revert InputControlModular__NotAllowedInput();
             }
 
-            s_funcToInputUnordered[_funcSelec][_callerAddress]
-                .inputToTimesToUse[_input] -= 1;
+            s_funcToInputUnordered[_funcSelec][_callerAddress].inputToTimesToUse[_input] -= 1;
 
             s_funcToInputUnordered[_funcSelec][_callerAddress].inputsToUse -= 1;
 
-            if (
-                s_funcToInputUnordered[_funcSelec][_callerAddress]
-                    .inputsToUse != 0
-            ) {
+            if (s_funcToInputUnordered[_funcSelec][_callerAddress].inputsToUse != 0) {
                 delete s_funcToInputUnordered[_funcSelec][_callerAddress]
                     .inputs[
                         s_funcToInputUnordered[_funcSelec][_callerAddress]
@@ -209,37 +197,25 @@ contract InputControlModular is IInputControlModular {
 
         if (_isSequence) {
             // Saving values in a inputSequence structure
-            s_funcToInputSequence[funcSelector][_callerAddress]
-                .inputsToUse = _validInputs.length;
+            s_funcToInputSequence[funcSelector][_callerAddress].inputsToUse = _validInputs.length;
             s_funcToInputSequence[funcSelector][_callerAddress].currentCall = 0;
-            s_funcToInputSequence[funcSelector][_callerAddress]
-                .inputs = _validInputs;
+            s_funcToInputSequence[funcSelector][_callerAddress].inputs = _validInputs;
         } else {
             // Saving values in an inputUnordered structure
-            s_funcToInputUnordered[funcSelector][_callerAddress]
-                .inputs = _validInputs;
-            s_funcToInputUnordered[funcSelector][_callerAddress]
-                .inputsToUse = _validInputs.length;
+            s_funcToInputUnordered[funcSelector][_callerAddress].inputs = _validInputs;
+            s_funcToInputUnordered[funcSelector][_callerAddress].inputsToUse = _validInputs.length;
 
             // Resets old map values
             for (uint256 i = 0; i < _validInputs.length; i++) {
-                s_funcToInputUnordered[funcSelector][_callerAddress]
-                    .inputToTimesToUse[_validInputs[i]] = 0;
+                s_funcToInputUnordered[funcSelector][_callerAddress].inputToTimesToUse[_validInputs[i]] = 0;
             }
 
             for (uint256 i = 0; i < _validInputs.length; i++) {
-                s_funcToInputUnordered[funcSelector][_callerAddress]
-                    .inputToPosition[_validInputs[i]] = i + 1;
-                s_funcToInputUnordered[funcSelector][_callerAddress]
-                    .inputToTimesToUse[_validInputs[i]] += 1;
+                s_funcToInputUnordered[funcSelector][_callerAddress].inputToPosition[_validInputs[i]] = i + 1;
+                s_funcToInputUnordered[funcSelector][_callerAddress].inputToTimesToUse[_validInputs[i]] += 1;
             }
         }
 
-        emit InputControlModular__AllowedInputsGranted(
-            _callerAddress,
-            funcSelector,
-            _validInputs,
-            _isSequence
-        );
+        emit InputControlModular__AllowedInputsGranted(_callerAddress, funcSelector, _validInputs, _isSequence);
     }
 }

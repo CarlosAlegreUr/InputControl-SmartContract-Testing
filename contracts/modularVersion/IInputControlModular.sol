@@ -23,20 +23,14 @@ interface IInputControlModular {
      * in order to help keeping track of the contract's actions.
      */
     event InputControlModular__AllowedInputsGranted(
-        address indexed caller,
-        bytes4 indexed funcSelec,
-        bytes32[] validInputs,
-        bool isSequence
+        address indexed caller, bytes4 indexed funcSelec, bytes32[] validInputs, bool isSequence
     );
 
     /**
      * @return Returns wheter the `_callerAddress` must use intputs for `_funcSignature` in a
      * sequence or an unordered manner.
      */
-    function getIsSequence(
-        string calldata _funcSignature,
-        address _callerAddress
-    ) external view returns (bool);
+    function getIsSequence(string calldata _funcSignature, address _callerAddress) external view returns (bool);
 
     /**
      * @return Allowed inputs from `_callerAddress` when calling `_funcSignature`.
@@ -54,10 +48,15 @@ interface IInputControlModular {
      * reommenation is just for making sure you always can precisely check what someone has or hasn't
      * used in the contract.
      */
-    function getAllowedInputs(
-        string calldata _funcSignature,
-        address _callerAddress
-    ) external view returns (bytes32[] memory);
+    function getAllowedInputs(string calldata _funcSignature, address _callerAddress)
+        external
+        view
+        returns (bytes32[] memory);
+
+    /**
+     * @return Bool indicates if `someone` address is admin.
+     */
+    function getIsAdmin(address someone) external view returns (bool);
 
     /**
      * @dev Checks if `_callerAddress` can call `_funcSelec` with `_input`.
@@ -65,26 +64,25 @@ interface IInputControlModular {
      * or the whole data structure of inputSequence or inputUnordered for `_callerAddress`
      * at `_funcSelec`.
      */
-    function isAllowedInput(
-        bytes4 _funcSelec,
-        address _callerAddress,
-        bytes32 _input
-    ) external;
+    function isAllowedInput(bytes4 _funcSelec, address _callerAddress, bytes32 _input) external;
 
     /**
-     * @dev Must be only callable by current admin.
+     * @dev Must be only callable by current admin/s.
      *
      * @notice In order for allowInputsFor() not be callable by any random address
-     * we need an admin one we control. For that there is a simple admin implementation
+     * we need an admin address we control. For that there is a simple admin implementation
      * required. Check it out in InputControlModular.sol.
      *
      * In InputControlModular the first admin will be the deployer of this interface
      * implementation. After that the deployer will be able to update it to any desired
      * contract if needed by using this function.
      *
+     * @param _newAdmin The address which it's role wants to be changed.
+     *
+     * @param _newIsAdmin The new role for the `_newAdmin` address, true for admin, false
+     * for not admin.
      */
-    function setAdmin(address _nextAdmin) external;
-
+    function setAdmin(address _newAdmin, bool _newIsAdmin) external;
     /**
      * @dev Allows `_callerAddress` to call `_funcSignature` with `_validInputs`
      * values. If `_callerAddress` has some `_validInputs` to call left but this

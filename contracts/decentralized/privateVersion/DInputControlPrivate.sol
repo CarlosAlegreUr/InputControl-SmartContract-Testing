@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.18;
 
 /* Customed Errors */
-error InputControlGlobal__NotAllowedInput();
-error InputControlGlobal__PermissionDoesntExist();
-error InputControlGlobal__AllowerIsNotSender();
+error DInputControlPrivate__NotAllowedInput();
+error DInputControlPrivate__PermissionDoesntExist();
+error DInputControlPrivate__AllowerIsNotSender();
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
-import "./IInputControlGlobal.sol";
+import "./IDInputControlPrivate.sol";
 
 /**
  * @title Input Control Global
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @notice InputControlGlobal is an implementation of IInputControlGlobal. It's been created
+ * @notice DInputControlPrivate is an implementation of IDInputControlPrivate. It's been created
  * aiming to create public infrastructure for EVM compatible blockchains.
  *
  * The InputControl system can be used to control which inputs can some addresses send to
@@ -27,9 +27,9 @@ import "./IInputControlGlobal.sol";
  *
  * Input control can handle that the desired values are used in the desired order. Or even in an undordered manner.
  *
- * @dev To use this public inftastructure add a IInputControlGlobal reference in your contract like so:
+ * @dev To use this public inftastructure add a IDInputControlPrivate reference in your contract like so:
  *
- *        IInputControlGlobal inputControl = IInputControlGlobal("official address yet to be deployed")
+ *        IDInputControlPrivate inputControl = IDInputControlPrivate("official address yet to be deployed")
  *
  * Now you can call the setInputsPermission() and isAllowedInput() functions to give permissions or check
  * them when people try to use your contract services.
@@ -45,7 +45,7 @@ import "./IInputControlGlobal.sol";
  * @dev To check the InputControl.sol contract that works with composition:
  * (TODO: add link)
  */
-contract InputControlGlobal is IInputControlGlobal {
+contract DInputControlPrivate is IDInputControlPrivate {
     /* Types */
 
     /**
@@ -90,7 +90,7 @@ contract InputControlGlobal is IInputControlGlobal {
     /* State Variables */
 
     /**
-     * @dev Check Permission struct and state enum at IInputControlGlobal.sol.
+     * @dev Check Permission struct and state enum at IDInputControlPrivate.sol.
      */
     // State of a permission ID
     mapping(bytes32 => PermissionState) s_permissionState;
@@ -99,14 +99,17 @@ contract InputControlGlobal is IInputControlGlobal {
     // Permission ID to its corresponding alloed InputUnordered
     mapping(bytes32 => InputUnordered) s_inputsUnordered;
 
+    /* Functions */
+
     /**
-     * @dev See documentation for the following public or external functions in IInputControlGlobal.sol:
+     * @dev See documentation for the following public or external functions in IDInputControlPrivate.sol:
      * (TODO: add link)
      *
      * @dev Private functions docs can be found here, down below.
      */
 
-    /* Public Functions */
+    /* Public functions */
+    /* Getters */
 
     function getPermissionId(Permission memory _p) public pure returns (bytes32) {
         return keccak256(abi.encode(_p.allower, _p.contractAddress, _p.functionSelector, _p.caller));
@@ -133,7 +136,7 @@ contract InputControlGlobal is IInputControlGlobal {
     function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) public {
         // Check so no impersonation occures
         if (msg.sender != _p.allower) {
-            revert InputControlGlobal__AllowerIsNotSender();
+            revert DInputControlPrivate__AllowerIsNotSender();
         }
 
         bytes32 pId = getPermissionId(_p);
@@ -155,7 +158,7 @@ contract InputControlGlobal is IInputControlGlobal {
             _handleNewUnorderedPermission(pId, _inputsIds);
         }
 
-        emit InputControlGlobal__InputsPermissionGranted(_p, s_permissionState[pId]);
+        emit DInputControlPrivate__InputsPermissionGranted(_p, s_permissionState[pId]);
     }
 
     /* External functions */
@@ -167,7 +170,7 @@ contract InputControlGlobal is IInputControlGlobal {
 
         // Checking permission state, only exeute if existing permission
         if (currentState == PermissionState.IS_NOT_EXISTING) {
-            revert InputControlGlobal__PermissionDoesntExist();
+            revert DInputControlPrivate__PermissionDoesntExist();
         }
 
         // Use the proper checking for each structure
@@ -277,12 +280,12 @@ contract InputControlGlobal is IInputControlGlobal {
     function _hanldeSequenceCheck(bytes32 _permissionId, bytes32 _input) private {
         // Hanlding case deleted inputSequence case
         if (s_inputsSequences[_permissionId].inputsToUse == 0) {
-            revert InputControlGlobal__NotAllowedInput();
+            revert DInputControlPrivate__NotAllowedInput();
         }
 
         // The main input check
         if (s_inputsSequences[_permissionId].inputs[s_inputsSequences[_permissionId].currentCall] != _input) {
-            revert InputControlGlobal__NotAllowedInput();
+            revert DInputControlPrivate__NotAllowedInput();
         }
 
         // Updating inputSequence values
@@ -314,7 +317,7 @@ contract InputControlGlobal is IInputControlGlobal {
             s_inputsUnordered[_permissionId].inputToTimesToUse[_input] == 0
                 || s_inputsUnordered[_permissionId].inputsToUse == 0
         ) {
-            revert InputControlGlobal__NotAllowedInput();
+            revert DInputControlPrivate__NotAllowedInput();
         }
 
         // Updating InputUnordered structure values

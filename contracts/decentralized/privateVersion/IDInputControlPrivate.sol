@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.18;
 
 /**
  * @title Input Control Global Interface
@@ -12,7 +12,7 @@ pragma solidity ^0.8.9;
  * @dev For an implementation example, refer to the contract UseCaseContractGlobal.sol:
  * (TODO: add link)
  */
-interface IInputControlGlobal {
+interface IDInputControlPrivate {
     /// @notice Represents the various states a permission can be in
     /// Can represent if permission exists and if so to which kind of
     /// allowed input points to.
@@ -24,12 +24,10 @@ interface IInputControlGlobal {
 
     /// @notice Defines a set of parameters to control permissions
     /// @param allower The address granting permissions
-    /// @param contractAddress The target contract address for the permissions
     /// @param functionSelector The function selector for the target function in the contract
     /// @param caller The address being granted the permission
     struct Permission {
         address allower;
-        address contractAddress;
         bytes4 functionSelector;
         address caller;
     }

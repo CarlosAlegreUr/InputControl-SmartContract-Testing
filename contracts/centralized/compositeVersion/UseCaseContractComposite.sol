@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.18;
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
-import "./IInputControlModular.sol";
+import "./IInputControlComposite.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // AccessControl.sol is not used in this contract but here it is if
@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * @title Example of contract using InputControl.
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @dev To use InputControlModular instantiate a reference to an InputControlModular
+ * @dev To use InputControlComposite instantiate a reference to an InputControlComposite
  * contract address.
  *
  * @notice The implementation can be vary depending on what you need, in this contract
@@ -29,19 +29,19 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  *
  * @notice For now there are no official implementation addresses in mainnets or testnets
  * due to code has not been audited yet. So when testing in local or testnet you will have to
- * deploy InputControlModular first and use it's resulting address.
+ * deploy InputControlComposite first and use it's resulting address.
  *
  * @dev Additionally you can wrap allowInputsFor() call in a function that uses your own useful
  * modfiers. This will allow mixing this functionalities with, for example, other useful ones like
  * Owner or AccessControl contracts from OpenZeppelin.
  */
 contract UseCaseContractModular is Ownable {
-    IInputControlModular immutable i_inputControl; // <---- Look here!
+    IInputControlComposite immutable i_inputControl; // <---- Look here!
     uint256 private s_incrediblyAmazingNumber;
     address private s_someAddress;
 
     constructor(address _inputControlAddress) {
-        i_inputControl = IInputControlModular(_inputControlAddress); // <---- Look here!
+        i_inputControl = IInputControlComposite(_inputControlAddress); // <---- Look here!
     }
 
     // Look here!

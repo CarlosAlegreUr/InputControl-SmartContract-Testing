@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-// Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
 import "./IInputControlGlobal.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+
+import "../../../lib/forge-std/src/console.sol";
 
 // AccessControl.sol is not used in this contract but here it is if
 // you want to play with it. (:D)
@@ -44,7 +45,7 @@ contract UseCaseContractGlobal is Ownable {
 
     // Look here!
     modifier checkInputControl(string memory _funcSig, address _callerAddress, bytes32 _input) {
-        if (s_inputControlDisabled) {
+        if (!s_inputControlDisabled) {
             bytes4 _funcSelec = bytes4(keccak256(bytes(_funcSig)));
             IInputControlGlobal.Permission memory p = IInputControlGlobal.Permission({
                 allower: address(this), // <-- We are checking that this address
@@ -52,7 +53,6 @@ contract UseCaseContractGlobal is Ownable {
                 functionSelector: _funcSelec, // <-- this function with the _input
                 caller: _callerAddress // <-- to this address
             });
-
             i_inputControl.isAllowedInput(p, _input);
         }
         _;
@@ -81,7 +81,7 @@ contract UseCaseContractGlobal is Ownable {
     // Any function in your own smart contract.
     function myFunc(uint256 _newNumber, address _anAddress)
         external
-         // <--- Modifier that will call InputControlGlobal
+        // <--- Modifier that will call InputControlGlobal
         checkInputControl(
             "myFunc(uint256,address)", //<---- Look here!
             msg.sender, //<---- Look here!

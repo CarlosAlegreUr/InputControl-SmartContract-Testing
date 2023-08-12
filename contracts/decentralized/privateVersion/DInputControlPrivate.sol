@@ -112,7 +112,7 @@ contract DInputControlPrivate is IDInputControlPrivate {
     /* Getters */
 
     function getPermissionId(Permission memory _p) public pure returns (bytes32) {
-        return keccak256(abi.encode(_p.allower, _p.contractAddress, _p.functionSelector, _p.caller));
+        return keccak256(abi.encode(_p.allower, _p.functionSelector, _p.caller));
     }
 
     function getPermissionState(Permission calldata _p) public view returns (PermissionState) {

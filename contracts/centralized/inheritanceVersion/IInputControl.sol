@@ -49,10 +49,7 @@ interface IInputControl {
     /// @notice Fetches the state of a permission
     /// @param _p The permission details
     /// @return The state of the given permission
-    function getPermissionState(Permission calldata _p)
-        external
-        view
-        returns (IInputControlComposite.PermissionState);
+    function getPermissionState(Permission calldata _p) external view returns (PermissionState);
 
     /// @notice Retrieves the allowed input IDs for a permission
     /// @param _p The permission details
@@ -65,5 +62,6 @@ interface IInputControl {
     /// @param _p The permission details
     /// @param _inputsIds List of input IDs to permit
     /// @param _isSequence Whether the inputs should be used in sequence or not
-    function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) external;
+    function callSetInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence)
+        external;
 }

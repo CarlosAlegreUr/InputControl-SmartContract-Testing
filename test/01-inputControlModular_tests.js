@@ -1,3 +1,8 @@
+////////////////////////////////////////////////////////////////////
+//  THESE TEST WERE WRITTEN FOR PREVIOUS VERSIONS OF THE CODE     //
+//  THEY NO LONGER HOLD DUE TO ARCHITERTURAL CHANGES IN THE CODE  //
+//  THEIR ADAPTION SHOULDN'T BE VERY HARD YET I DIDNT CODE IT YET //
+////////////////////////////////////////////////////////////////////
 const { assert, expect } = require("chai");
 const { ethers, getNamedAccounts } = require("hardhat");
 

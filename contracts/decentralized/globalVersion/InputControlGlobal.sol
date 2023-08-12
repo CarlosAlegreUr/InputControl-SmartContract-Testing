@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-/* Customed Errors */
-error InputControlGlobal__NotAllowedInput();
-error InputControlGlobal__PermissionDoesntExist();
-error InputControlGlobal__AllowerIsNotSender();
+import "./IInputControlGlobal.sol";
 
 // Uncomment this line to use console.log
-// import "hardhat/console.sol";
-
-import "./IInputControlGlobal.sol";
+// import "../../../lib/forge-std/src/console.sol";
 
 /**
  * @title Input Control Global
@@ -90,7 +85,7 @@ contract InputControlGlobal is IInputControlGlobal {
     /* State Variables */
 
     /**
-     * @dev Check Permission struct and state enum at IInputControlGlobal.sol.
+     * @dev Check `Permission` struct and the `PermissionState` state enum at IInputControlGlobal.sol.
      */
     // State of a permission ID
     mapping(bytes32 => PermissionState) s_permissionState;
@@ -136,7 +131,7 @@ contract InputControlGlobal is IInputControlGlobal {
     function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) public {
         // Check so no impersonation occures
         if (msg.sender != _p.allower) {
-            revert InputControlGlobal__AllowerIsNotSender();
+            revert IInputControlGlobal.InputControlGlobal__AllowerIsNotSender();
         }
 
         bytes32 pId = getPermissionId(_p);
@@ -163,28 +158,23 @@ contract InputControlGlobal is IInputControlGlobal {
 
     /* External functions */
 
-    function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool) {
+    function isAllowedInput(Permission calldata _p, bytes32 _input) external {
         // Getting permission values needed
         bytes32 pId = getPermissionId(_p);
         PermissionState currentState = s_permissionState[pId];
 
         // Checking permission state, only exeute if existing permission
         if (currentState == PermissionState.IS_NOT_EXISTING) {
-            revert InputControlGlobal__PermissionDoesntExist();
+            revert IInputControlGlobal.InputControlGlobal__PermissionDoesntExist();
         }
 
         // Use the proper checking for each structure
-        // Return false statements should never execute, they are added just in case.
         if (currentState == PermissionState.IS_SEQUENCE) {
             _hanldeSequenceCheck(pId, _input);
-            return false;
         }
         if (currentState == PermissionState.IS_UNORDERED) {
             _hanldeUnorderedCheck(pId, _input);
-            return false;
         }
-
-        return true;
     }
 
     /* Private functions */
@@ -278,14 +268,9 @@ contract InputControlGlobal is IInputControlGlobal {
      * @param _input is the hash representation (id) of the input being used by the caller.
      */
     function _hanldeSequenceCheck(bytes32 _permissionId, bytes32 _input) private {
-        // Hanlding case deleted inputSequence case
-        if (s_inputsSequences[_permissionId].inputsToUse == 0) {
-            revert InputControlGlobal__NotAllowedInput();
-        }
-
         // The main input check
         if (s_inputsSequences[_permissionId].inputs[s_inputsSequences[_permissionId].currentCall] != _input) {
-            revert InputControlGlobal__NotAllowedInput();
+            revert IInputControlGlobal.InputControlGlobal__NotAllowedInput();
         }
 
         // Updating inputSequence values
@@ -317,7 +302,7 @@ contract InputControlGlobal is IInputControlGlobal {
             s_inputsUnordered[_permissionId].inputToTimesToUse[_input] == 0
                 || s_inputsUnordered[_permissionId].inputsToUse == 0
         ) {
-            revert InputControlGlobal__NotAllowedInput();
+            revert IInputControlGlobal.InputControlGlobal__NotAllowedInput();
         }
 
         // Updating InputUnordered structure values

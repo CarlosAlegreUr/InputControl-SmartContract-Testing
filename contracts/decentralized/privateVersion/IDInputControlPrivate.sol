@@ -35,7 +35,7 @@ interface IDInputControlPrivate {
     /// @notice Event emitted when permissions for inputs are granted
     /// @param permission The associated permission details
     /// @param state The state of the permission (sequence or unordered)
-    event InputControlGlobal__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+    event DInputControlPrivate__InputsPermissionGranted(Permission indexed permission, PermissionState state);
 
     /// @notice Calculates a unique ID for a permission
     /// @param _p The permission details

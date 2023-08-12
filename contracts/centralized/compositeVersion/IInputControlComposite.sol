@@ -31,11 +31,14 @@ interface IInputControlComposite {
     }
 
     /* Events */
-    
+
     /// @notice Event emitted when permissions for inputs are granted
     /// @param permission The associated permission details
     /// @param state The state of the permission (sequence or unordered)
     event InputControlComposite__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+
+    /* Checkers */
+    function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool);
 
     /* Getters */
 
@@ -47,7 +50,10 @@ interface IInputControlComposite {
     /// @notice Fetches the state of a permission
     /// @param _p The permission details
     /// @return The state of the given permission
-    function getPermissionState(Permission calldata _p) external view returns (IInputControlComposite.PermissionState);
+    function getPermissionState(Permission calldata _p)
+        external
+        view
+        returns (IInputControlComposite.PermissionState);
 
     /// @notice Retrieves the allowed input IDs for a permission
     /// @param _p The permission details
@@ -64,12 +70,12 @@ interface IInputControlComposite {
 
     /* Admin related functions */
 
-    /// @param someone The address to check
+    /// @param _someone The address to check
     /// @return Wheter `_someone` has admin permissions or not. True = It has, False = I hasnt
     function getIsAdmin(address _someone) external view returns (bool);
 
     /// @return Returns how many admins the contract has.
-    function getAdminCount() public view returns (uint256) 
+    function getAdminCount() external view returns (uint256);
 
     /// @param _newAdmin The address to apply the change
     /// @param _newIsAdmin Wheter to make admin or not

@@ -64,7 +64,7 @@ contract InputControl is IInputControl {
 
     mapping(bytes32 => InputSequence) s_inputsSequences;
     mapping(bytes32 => InputUnordered) s_inputsUnordered;
-    mapping(bytes32 => IInputControlComposite.PermissionState) s_permissionState;
+    mapping(bytes32 => IInputControl.PermissionState) s_permissionState;
 
     /* Modifiers */
 
@@ -75,7 +75,7 @@ contract InputControl is IInputControl {
 
         // Checking permission state, only exeute if existing permission
         if (currentState == PermissionState.IS_NOT_EXISTING) {
-            revert InputControlComposite__NotAllowedInput();
+            revert InputControl__NotAllowedInput();
         }
 
         // Use the proper checking for each structure
@@ -92,7 +92,7 @@ contract InputControl is IInputControl {
     /* Functions */
 
     /**
-     * @dev See documentation for the following public or external functions in IInputControlComposite.sol:
+     * @dev See documentation for the following public or external functions in IInputControl.sol:
      * (TODO: add link)
      *
      * @dev Private functions docs can be found here, down below.
@@ -105,7 +105,7 @@ contract InputControl is IInputControl {
         return keccak256(abi.encode(_p.functionSelector, _p.caller));
     }
 
-    function getPermissionState(Permission calldata _p) public view returns (IInputControlComposite.PermissionState) {
+    function getPermissionState(Permission calldata _p) public view returns (IInputControl.PermissionState) {
         return s_permissionState[getPermissionId(_p)];
     }
 
@@ -121,7 +121,6 @@ contract InputControl is IInputControl {
         return new bytes32[](0);
     }
 
-
     /**
      * @dev Override this function in your contract to use
      * allowInputsFor() mixed with other useful contracts and
@@ -130,17 +129,16 @@ contract InputControl is IInputControl {
      *
      * See param specifications in allowInputsFor() docs.
      */
-    function callSetInputsPermission(
-        Permission calldata _p;
-        bytes32[] calldata _validInputs,
-        bool _isSequence
-    ) public virtual {
-        setInputsPermission(_p, _validInputs, _isSequence);
+    function callSetInputsPermission(Permission calldata _p, bytes32[] calldata _validInputs, bool _isSequence)
+        public
+        virtual
+    {
+        _setInputsPermission(_p, _validInputs, _isSequence);
     }
 
     /* Private functions */
 
-    function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) private {
+    function _setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) private {
         bytes32 pId = getPermissionId(_p);
 
         // Check if there is some storage to clean up.
@@ -254,12 +252,12 @@ contract InputControl is IInputControl {
     function _hanldeSequenceCheck(bytes32 _permissionId, bytes32 _input) private {
         // Hanlding case deleted inputSequence case
         if (s_inputsSequences[_permissionId].inputsToUse == 0) {
-            revert InputControlComposite__NotAllowedInput();
+            revert InputControl__NotAllowedInput();
         }
 
         // The main input check
         if (s_inputsSequences[_permissionId].inputs[s_inputsSequences[_permissionId].currentCall] != _input) {
-            revert InputControlComposite__NotAllowedInput();
+            revert InputControl__NotAllowedInput();
         }
 
         // Updating inputSequence values
@@ -291,7 +289,7 @@ contract InputControl is IInputControl {
             s_inputsUnordered[_permissionId].inputToTimesToUse[_input] == 0
                 || s_inputsUnordered[_permissionId].inputsToUse == 0
         ) {
-            revert InputControlComposite__NotAllowedInput();
+            revert InputControl__NotAllowedInput();
         }
 
         // Updating InputUnordered structure values

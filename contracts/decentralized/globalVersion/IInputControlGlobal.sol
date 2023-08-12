@@ -13,6 +13,13 @@ pragma solidity ^0.8.18;
  * (TODO: add link)
  */
 interface IInputControlGlobal {
+    /* Customed Errors */
+    error InputControlGlobal__NotAllowedInput();
+    error InputControlGlobal__PermissionDoesntExist();
+    error InputControlGlobal__AllowerIsNotSender();
+
+    /* Types */
+
     /// @notice Represents the various states a permission can be in
     /// Can represent if permission exists and if so to which kind of
     /// allowed input points to.
@@ -34,10 +41,14 @@ interface IInputControlGlobal {
         address caller;
     }
 
+    /* Events */
+
     /// @notice Event emitted when permissions for inputs are granted
     /// @param permission The associated permission details
     /// @param state The state of the permission (sequence or unordered)
     event InputControlGlobal__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+
+    /* Functions */
 
     /// @notice Calculates a unique ID for a permission
     /// @param _p The permission details
@@ -63,6 +74,5 @@ interface IInputControlGlobal {
     /// @notice Checks if a specific input is allowed for a permission
     /// @param _p The permission details
     /// @param _input The input to check
-    /// @return True if the input is allowed, otherwise false
-    function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool);
+    function isAllowedInput(Permission calldata _p, bytes32 _input) external;
 }

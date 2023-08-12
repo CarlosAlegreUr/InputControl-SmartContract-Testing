@@ -126,7 +126,7 @@ contract InputControlComposite is IInputControlComposite {
         return new bytes32[](0);
     }
 
-    function getAdminCount() public view returns (bool) {
+    function getAdminCount() public view returns (uint256) {
         return s_adminCounter;
     }
 
@@ -167,12 +167,9 @@ contract InputControlComposite is IInputControlComposite {
         // Update admin counter and state that signals if contract has admins
         if (_newIsAdmin) {
             s_adminCounter++;
-            s_HAS_ADMINS = true;
         } else {
             if (s_adminCounter > 0) {
                 s_adminCounter--;
-            } else {
-                s_HAS_ADMINS = false;
             }
         }
     }

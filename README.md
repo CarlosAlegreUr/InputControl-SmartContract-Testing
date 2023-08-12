@@ -13,9 +13,46 @@ Check the contract code here => [(click)](https://github.com/CarlosAlegreUr/Inpu
 
 Check the npm repository => [(click)](https://www.npmjs.com/package/input-control-contract)
 
-If further elaboration, development or testing please mention me in your work.
+If further elaboration, development or testing please mention me in your work or open PRs to this repo.
 
 😉 https://github.com/CarlosAlegreUr 😉
+
+## Types of InputControls implementations:
+
+**Input Control (IC)**
+
+### Centralized:
+
+- **Inheritance (ICI)**
+- **Composite (ICC)**
+
+### Decentralized:
+
+- **Global (ICG)**
+- **Private (ICP)**
+
+---
+
+## Input Control Tests State:
+
+> **Legend:**
+>
+> 🟢 => Written and good, feel free to improve though
+>
+> 🔵 => Written but not updated
+>
+> 🟡 => Writing or updating
+>
+> 🔴 => Not even started
+
+---
+
+| **InputControl Implementation** | **Unit Testing** | **Fuzz Testing** | **Invariant Testing** |
+| ------------------------------- | ---------------- | ---------------- | --------------------- |
+| ICI                             | 🔵               | 🔴               | 🔴                    |
+| ICC                             | 🔵               | 🔴               | 🔴                    |
+| ICG                             | 🟢               | 🟢               | 🟡                    |
+| ICP                             | 🔴               | 🔴               | 🔴                    |
 
 <hr/>
 

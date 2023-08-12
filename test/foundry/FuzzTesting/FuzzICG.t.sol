@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {Test} from "../../lib/forge-std/src/Test.sol";
-import "../../lib/forge-std/src/console.sol";
+import {Test} from "../../../lib/forge-std/src/Test.sol";
+import "../../../lib/forge-std/src/console.sol";
 
 // Composite (Global) version
 import {InputControlGlobal} from "contracts/decentralized/globalVersion/InputControlGlobal.sol";
 import {IInputControlGlobal} from "contracts/decentralized/globalVersion/IInputControlGlobal.sol";
 import {UseCaseContractGlobal} from "contracts/decentralized/globalVersion/UseCaseContractGlobal.sol";
 
-contract FuzzTestICG is Test {
+contract FuzzTestICP is Test {
     /**
      *
      *  DATA STRUCTURES USED
@@ -74,7 +74,7 @@ contract FuzzTestICG is Test {
      *
      */
 
-    // If properly implemented with ICG: Only contracts can give permissions to its users.
+    // If properly implemented with ICP: Only contracts can give permissions to its users.
     function testFuzz_SetInputsPermissionOnlyContract(address _attacker, address _attacker2) public {
         if (_attacker == address(0)) _attacker = address(69);
         if (_attacker2 == address(0)) _attacker2 = address(6969);

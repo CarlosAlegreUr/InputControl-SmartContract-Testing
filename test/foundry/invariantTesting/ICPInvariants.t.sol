@@ -7,11 +7,11 @@ pragma solidity ^0.8.18;
 // import "../../../lib/forge-std/src/console.sol";
 
 // // Composite (Global) version
-// import {InputControlGlobal} from "contracts/decentralized/globalVersion/InputControlGlobal.sol";
-// import {IInputControlGlobal} from "contracts/decentralized/globalVersion/IInputControlGlobal.sol";
-// import {UseCaseContractGlobal} from "contracts/decentralized/globalVersion/UseCaseContractGlobal.sol";
+// import {InputControlPublic} from "contracts/public/InputControlPublic.sol";
+// import {IInputControlPublic} from "contracts/public/IInputControlPublic.sol";
+// import {UseCaseContractPublic} from "contracts/public/UseCaseContractPublic.sol";
 
-// import {HandlerICG} from "./ICGHandler.t.sol";
+// import {HandlerICG} from "./handlers/ICGHandler.t.sol";
 
 // contract InvariantsICG is Test {
 //     uint256 public constant NUM_OF_PARTICIPANT_CONTRACTS = 10;
@@ -20,11 +20,11 @@ pragma solidity ^0.8.18;
 //     address public neverCalled;
 //     address public ownerNeverCalled;
 
-//     IInputControlGlobal inputCGlobal;
+//     IInputControlPublic inputCGlobal;
 //     HandlerICG public handler;
 
 //     function setUp() public {
-//         inputCGlobal = IInputControlGlobal(new InputControlGlobal());
+//         inputCGlobal = IInputControlPublic(new InputControlPublic());
 //         _deployXUseCaseContracts(NUM_OF_PARTICIPANT_CONTRACTS);
 //         HandlerICG h = new HandlerICG(contracts, owners, address(inputCGlobal));
 //         targetContract(address(h));
@@ -37,7 +37,7 @@ pragma solidity ^0.8.18;
 //             address owner;
 //             owner = address(uint160(i));
 //             vm.prank(owner);
-//             UseCaseContractGlobal c = new UseCaseContractGlobal(address(inputCGlobal));
+//             UseCaseContractPublic c = new UseCaseContractPublic(address(inputCGlobal));
 //             contracts.push(address(c));
 //             owners.push(owner);
 //         }

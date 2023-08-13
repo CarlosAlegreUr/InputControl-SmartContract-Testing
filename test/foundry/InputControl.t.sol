@@ -4,12 +4,12 @@ pragma solidity ^0.8.18;
 import {Test} from "../../lib/forge-std/src/Test.sol";
 import "../../lib/forge-std/src/console.sol";
 
-// Composite (Global) version
-import {InputControlGlobal} from "contracts/decentralized/globalVersion/InputControlGlobal.sol";
-import {IInputControlGlobal} from "contracts/decentralized/globalVersion/IInputControlGlobal.sol";
-import {UseCaseContractGlobal} from "contracts/decentralized/globalVersion/UseCaseContractGlobal.sol";
+// Composite version
+import {InputControl} from "contracts/owned/inheritanceVersion/InputControl.sol";
+import {IInputControl} from "contracts/owned/inheritanceVersion/IInputControl.sol";
+import {UseCaseContract} from "contracts/owned/inheritanceVersion/UseCaseContract.sol";
 
-contract UnitTestICG is Test {
+contract UnitTestICI is Test {
     /**
      *
      *  DATA STRUCTURES USED
@@ -28,8 +28,7 @@ contract UnitTestICG is Test {
     address public user2 = makeAddr("user2");
 
     // Contracts used
-    UseCaseContractGlobal public c1;
-    IInputControlGlobal inputCGlobal;
+    UseCaseContract public c1;
 
     // Functions used (only 1 so far myFunc)
     string public myFuncSig = "myFunc(uint256,address)";
@@ -44,23 +43,20 @@ contract UnitTestICG is Test {
         UseCaseContractInputs({num: 2, addr: address(2), id: keccak256(abi.encode(address(2), 2))});
 
     // Events used
-    event InputControlGlobal__InputsPermissionGranted(
-        IInputControlGlobal.Permission indexed permission, IInputControlGlobal.PermissionState state
+    event InputControl__InputsPermissionGranted(
+        IInputControl.Permission indexed permission, IInputControl.PermissionState state
     );
 
     // Shortened states access
-    IInputControlGlobal.PermissionState public unordered = IInputControlGlobal.PermissionState.IS_UNORDERED;
-    IInputControlGlobal.PermissionState public sequence = IInputControlGlobal.PermissionState.IS_SEQUENCE;
-    IInputControlGlobal.PermissionState public notExisting = IInputControlGlobal.PermissionState.IS_NOT_EXISTING;
+    IInputControl.PermissionState public unordered = IInputControl.PermissionState.IS_UNORDERED;
+    IInputControl.PermissionState public sequence = IInputControl.PermissionState.IS_SEQUENCE;
+    IInputControl.PermissionState public notExisting = IInputControl.PermissionState.IS_NOT_EXISTING;
 
     function setUp() public {
         // Deployment of the contracts
-        // inputCGlobal --> Cant have owners
         // c1 --> Owned by user1
-        vm.startPrank(owner1);
-        inputCGlobal = IInputControlGlobal(new InputControlGlobal());
-        c1 = new UseCaseContractGlobal(address(inputCGlobal));
-        vm.stopPrank();
+        vm.prank(owner1);
+        c1 = new UseCaseContract();
     }
 
     /**
@@ -68,17 +64,13 @@ contract UnitTestICG is Test {
      *  HELPER FUNCTIONS
      *
      */
-    function _createPermission(address _allower, address _contractAddress, bytes4 _functionSelector, address _caller)
+    function _createPermission(address _allower, bytes4 _functionSelector, address _caller)
         private
         pure
-        returns (IInputControlGlobal.Permission memory)
+        returns (IInputControl.Permission memory)
     {
-        IInputControlGlobal.Permission memory p = IInputControlGlobal.Permission({
-            allower: _allower,
-            contractAddress: _contractAddress,
-            functionSelector: _functionSelector,
-            caller: _caller
-        });
+        IInputControl.Permission memory p =
+            IInputControl.Permission({allower: _allower, functionSelector: _functionSelector, caller: _caller});
         return p;
     }
 
@@ -100,29 +92,36 @@ contract UnitTestICG is Test {
      *
      */
 
-    // If properly implemented with ICG: Only contracts can give permissions to its users.
-    function test_SetInputsPermissionOnlyContract() public {
+    // If properly implemented with ICI: Only contracts can give permissions to its users.
+    function testICI_SetInputsPermissionOnlyAdmin() public {
         // Users can't eventually execute permissions in properly set contracts
-        IInputControlGlobal.Permission memory p = _createPermission(user1, address(c1), myFuncSelec, user1);
+        IInputControl.Permission memory p = _createPermission(address(c1), myFuncSelec, user1);
         bytes32[] memory input = new bytes32[](1);
         input[0] = input0.id;
 
-        // User tries to give himself permissions
+        // User tries to give himself permissions, he has never been an admin, shouldnt work
+        vm.expectRevert();
         vm.startPrank(user1);
-        inputCGlobal.setInputsPermission(p, input, false);
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
         c1.myFunc(input0.num, input0.addr);
 
-        inputCGlobal.setInputsPermission(p, input, true);
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        vm.expectRevert();
         c1.myFunc(input0.num, input0.addr);
         vm.stopPrank();
 
-        // Now owner gives him permissions
+        // Onwer1 used to be an admin but not anymore, shoudnt work.
+        vm.expectRevert();
+        vm.startPrank(owner1);
+        c1.myFunc(input0.num, input0.addr);
+
+        vm.expectRevert();
+        c1.myFunc(input0.num, input0.addr);
+        vm.stopPrank();
+
+        // Now owner gives him permissions through the admin contract
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, false);
+        c1.callSetInputsPermission(p, input, false);
         // User2 tries to use inputs of user1
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        vm.expectRevert(IInputControl.InputControl__PermissionDoesntExist.selector);
         vm.prank(user2);
         c1.myFunc(input0.num, input0.addr);
         // User 1 calls function and works
@@ -130,36 +129,24 @@ contract UnitTestICG is Test {
         c1.myFunc(input0.num, input0.addr);
     }
 
-    // Impersonation is not posible.
-    function test_SetInputsPermissionImpersonationNotPosible() public {
-        // User 1 impersonating user 2
-        IInputControlGlobal.Permission memory p = _createPermission(user2, address(c1), myFuncSelec, user1);
-        bytes32[] memory input = new bytes32[](1);
-        input[0] = input0.id;
-
-        // User tries impersonating
-        vm.prank(user1);
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__AllowerIsNotSender.selector);
-        inputCGlobal.setInputsPermission(p, input, false);
-    }
-
     // Order of sequence inputs calls is correct
-    function test_InputsSequencesOnlyAllowsCorrectOrder() public {
+    function testICI_InputsSequencesOnlyAllowsCorrectOrder() public {
+        IInputControl.Permission memory p = _createPermission(address(c1), myFuncSelec, user1);
         bytes32[] memory input = new bytes32[](2);
         input[0] = input0.id;
         input[1] = input1.id;
 
         // Giving permissions
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, true);
+        c1.callSetInputsPermission(p, input, true);
 
         // Using incorrect input (no permissions for input 2)
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__NotAllowedInput.selector);
+        vm.expectRevert(IInputControl.InputControl__NotAllowedInput.selector);
         vm.prank(user1);
         c1.myFunc(input2.num, input2.addr);
 
         // Using incorrect input
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__NotAllowedInput.selector);
+        vm.expectRevert(IInputControl.InputControl__NotAllowedInput.selector);
         vm.prank(user1);
         c1.myFunc(input1.num, input1.addr);
 
@@ -168,7 +155,7 @@ contract UnitTestICG is Test {
         c1.myFunc(input0.num, input0.addr);
 
         // Using incorrect input
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__NotAllowedInput.selector);
+        vm.expectRevert(IInputControl.InputControl__NotAllowedInput.selector);
         vm.prank(user1);
         c1.myFunc(input0.num, input0.addr);
 
@@ -177,13 +164,14 @@ contract UnitTestICG is Test {
         c1.myFunc(input1.num, input1.addr);
 
         // Using incorrect input
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        vm.expectRevert(IInputControl.InputControl__PermissionDoesntExist.selector);
         vm.prank(user1);
         c1.myFunc(input0.num, input0.addr);
     }
 
     // Order of unordered inputs calls is correct
-    function test_InputsUnorderedOnlyAllowsCorrectCalls() public {
+    function testICI_InputsUnorderedOnlyAllowsCorrectCalls() public {
+        IInputControl.Permission memory p = _createPermission(address(c1), myFuncSelec, user1);
         // We can use input id 1 twice and id input 0 once.
         bytes32[] memory input = new bytes32[](3);
         input[0] = input0.id;
@@ -192,10 +180,10 @@ contract UnitTestICG is Test {
 
         // Giving permissions
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, false);
+        c1.callSetInputsPermission(p, input, false);
 
         // Using incorrect input (no permissions for input 2)
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__NotAllowedInput.selector);
+        vm.expectRevert(IInputControl.InputControl__NotAllowedInput.selector);
         vm.prank(user1);
         c1.myFunc(input2.num, input2.addr);
 
@@ -204,7 +192,7 @@ contract UnitTestICG is Test {
         c1.myFunc(input0.num, input0.addr);
 
         // Using incorrect input
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__NotAllowedInput.selector);
+        vm.expectRevert(IInputControl.InputControl__NotAllowedInput.selector);
         vm.prank(user1);
         c1.myFunc(input0.num, input0.addr);
 
@@ -213,7 +201,7 @@ contract UnitTestICG is Test {
         c1.myFunc(input1.num, input1.addr);
 
         // Using incorrect input
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__NotAllowedInput.selector);
+        vm.expectRevert(IInputControl.InputControl__NotAllowedInput.selector);
         vm.prank(user1);
         c1.myFunc(input0.num, input0.addr);
 
@@ -222,57 +210,28 @@ contract UnitTestICG is Test {
         c1.myFunc(input1.num, input1.addr);
 
         // Using incorrect input
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        vm.expectRevert(IInputControl.InputControl__PermissionDoesntExist.selector);
         vm.prank(user1);
         c1.myFunc(input0.num, input0.addr);
     }
 
     // Permissions are set and updated correctly.
-    function test_SetInputsPermissionPermissionsAreManagedCorrectly() public {
-        IInputControlGlobal.Permission memory p = _createPermission(user1, address(c1), myFuncSelec, user1);
+    function testICI_SetInputsPermissionPermissionsAreManagedCorrectly() public {
         bytes32[] memory input = new bytes32[](2);
         input[0] = input0.id;
         input[1] = input1.id;
 
-        // Check permissions ID calculation is correct inside the contract getter
-        bytes32 expectedId = keccak256(abi.encode(p.allower, p.contractAddress, p.functionSelector, p.caller));
-        assertTrue(expectedId == inputCGlobal.getPermissionId(p));
-
-        // Not saved, not exsting
-        IInputControlGlobal.PermissionState state = inputCGlobal.getPermissionState(p);
-        assertTrue(notExisting == state);
-
-        // Saving in unordered
-        vm.prank(user1);
-        inputCGlobal.setInputsPermission(p, input, false);
-        // State check
-        state = inputCGlobal.getPermissionState(p);
-        assertTrue(unordered == state);
-        // Inputs array check
-        bytes32[] memory saved = inputCGlobal.getAllowedInputs(p);
-        bool areEqual = _compareArrays(saved, input);
-        assertTrue(areEqual);
-
-        // Saving in ordered
-        vm.prank(user1);
-        inputCGlobal.setInputsPermission(p, input, true);
-        state = inputCGlobal.getPermissionState(p);
-        assertTrue(sequence == state);
-        saved = inputCGlobal.getAllowedInputs(p);
-        areEqual = _compareArrays(saved, input);
-        assertTrue(areEqual);
-
         // Now checking if inputs update correctly while users use them
-        IInputControlGlobal.Permission memory p2 = _createPermission(address(c1), address(c1), myFuncSelec, user1);
+        IInputControl.Permission memory p2 = _createPermission(address(c1), myFuncSelec, user1);
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, true);
+        c1.callSetInputsPermission(p2, input, true);
 
         // InputsIds where saved correctly
-        saved = inputCGlobal.getAllowedInputs(p2);
-        areEqual = _compareArrays(saved, input);
+        bytes32[] memory saved = c1.getAllowedInputs(p2);
+        bool areEqual = _compareArrays(saved, input);
         assertTrue(areEqual);
         // State updated correctly
-        state = inputCGlobal.getPermissionState(p2);
+        IInputControl.PermissionState state = c1.getPermissionState(p2);
         assertTrue(state == sequence);
 
         // Using first input
@@ -283,30 +242,30 @@ contract UnitTestICG is Test {
         bytes32[] memory input1UsedArray = new bytes32[](2);
         input1UsedArray[0] = bytes32(0);
         input1UsedArray[1] = input[1];
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         areEqual = _compareArrays(saved, input1UsedArray);
         assertTrue(areEqual);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == sequence);
 
         // Using second input
         vm.prank(user1);
         c1.myFunc(input1.num, input1.addr);
 
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         assertTrue(saved.length == 0);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == notExisting);
 
         // Same process but for unordered
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, false);
+        c1.callSetInputsPermission(p2, input, false);
 
         // InputsIds where saved correctly
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         areEqual = _compareArrays(saved, input);
         assertTrue(areEqual);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == unordered);
 
         // Using one input
@@ -317,18 +276,18 @@ contract UnitTestICG is Test {
         bytes32[] memory input2UsedArray = new bytes32[](2);
         input2UsedArray[0] = input[0];
         input2UsedArray[1] = bytes32(0);
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         areEqual = _compareArrays(saved, input2UsedArray);
         assertTrue(areEqual);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == unordered);
 
         // Using second input
         vm.prank(user1);
         c1.myFunc(input0.num, input0.addr);
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         assertTrue(saved.length == 0);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == notExisting);
 
         // Now we are gonna check if new inputs granted, the array of allowed
@@ -336,7 +295,7 @@ contract UnitTestICG is Test {
 
         // In sequence
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, true);
+        c1.callSetInputsPermission(p2, input, true);
 
         // Using one input
         vm.prank(user1);
@@ -347,18 +306,18 @@ contract UnitTestICG is Test {
         inputs2[0] = input2.id;
         inputs2[1] = input1.id;
         vm.prank(owner1);
-        c1.giveInputPermission(user1, inputs2, myFuncSig, true);
+        c1.callSetInputsPermission(p2, inputs2, true);
 
         // Checks
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         areEqual = _compareArrays(saved, inputs2);
         assertTrue(areEqual);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == sequence);
 
         // Same but in unordered
         vm.prank(owner1);
-        c1.giveInputPermission(user1, input, myFuncSig, false);
+        c1.callSetInputsPermission(p2, input, false);
 
         // Using one input
         vm.prank(user1);
@@ -366,13 +325,13 @@ contract UnitTestICG is Test {
 
         // Giving new inputs
         vm.prank(owner1);
-        c1.giveInputPermission(user1, inputs2, myFuncSig, false);
+        c1.callSetInputsPermission(p2, inputs2, false);
 
         // Checks
-        saved = inputCGlobal.getAllowedInputs(p2);
+        saved = c1.getAllowedInputs(p2);
         areEqual = _compareArrays(saved, inputs2);
         assertTrue(areEqual);
-        state = inputCGlobal.getPermissionState(p2);
+        state = c1.getPermissionState(p2);
         assertTrue(state == unordered);
     }
 }

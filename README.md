@@ -21,15 +21,14 @@ If further elaboration, development or testing please mention me in your work or
 
 **Input Control (IC)**
 
-### Centralized:
+### Owned:
 
 - **Inheritance (ICI)**
 - **Composite (ICC)**
 
-### Decentralized:
+### Public:
 
-- **Global (ICG)**
-- **Private (ICP)**
+- **Global (ICP)**
 
 ---
 
@@ -37,22 +36,21 @@ If further elaboration, development or testing please mention me in your work or
 
 > **Legend:**
 >
-> 🟢 => Written and good, feel free to improve though
+> 🟢 => Done, high coverage, feel free to improve though
 >
-> 🔵 => Written but not updated
+> 🔵 => Done, but not revised, coverage high
 >
-> 🟡 => Writing or updating
+> 🟡 => Updating
 >
 > 🔴 => Not even started
 
 ---
 
-| **InputControl Implementation** | **Unit Testing** | **Fuzz Testing** | **Invariant Testing** |
-| ------------------------------- | ---------------- | ---------------- | --------------------- |
-| ICI                             | 🔵               | 🔴               | 🔴                    |
-| ICC                             | 🔵               | 🔴               | 🔴                    |
-| ICG                             | 🟢               | 🟢               | 🟡                    |
-| ICP                             | 🔴               | 🔴               | 🔴                    |
+| **InputControl Implementation** | **Unit Testing** | **Fuzz Testing** | **Invariant Testing** | **Testnet testing** | **Audited** |
+| ------------------------------- | ---------------- | ---------------- | --------------------- | ------------------- | ----------- |
+| ICI                             | 🔵               | 🔴               | 🔴                    | 🔴                  | 🔴          |
+| ICC                             | 🔵               | 🔴               | 🔴                    | 🔴                  | 🔴          |
+| ICP                             | 🟢               | 🟢               | 🟡                    | 🔴                  | 🔴          |
 
 <hr/>
 

@@ -5,9 +5,9 @@ import {Test} from "../../../lib/forge-std/src/Test.sol";
 import "../../../lib/forge-std/src/console.sol";
 
 // Composite (Global) version
-import {InputControlGlobal} from "contracts/decentralized/globalVersion/InputControlGlobal.sol";
-import {IInputControlGlobal} from "contracts/decentralized/globalVersion/IInputControlGlobal.sol";
-import {UseCaseContractGlobal} from "contracts/decentralized/globalVersion/UseCaseContractGlobal.sol";
+import {InputControlPublic} from "contracts/public/InputControlPublic.sol";
+import {IInputControlPublic} from "contracts/public/IInputControlPublic.sol";
+import {UseCaseContractPublic} from "contracts/public/UseCaseContractPublic.sol";
 
 contract FuzzTestICP is Test {
     /**
@@ -26,8 +26,8 @@ contract FuzzTestICP is Test {
     address public owner1 = makeAddr("owner1");
 
     // Contracts used
-    UseCaseContractGlobal public c1;
-    IInputControlGlobal inputCGlobal;
+    UseCaseContractPublic public c1;
+    IInputControlPublic inputCPublic;
 
     // Functions used (only 1 so far myFunc)
     string public myFuncSig = "myFunc(uint256,address)";
@@ -41,11 +41,11 @@ contract FuzzTestICP is Test {
 
     function setUp() public {
         // Deployment of the contracts
-        // inputCGlobal --> Cant have owners
+        // inputCPublic --> Cant have owners
         // c1 --> Owned by user1
         vm.startPrank(owner1);
-        inputCGlobal = IInputControlGlobal(new InputControlGlobal());
-        c1 = new UseCaseContractGlobal(address(inputCGlobal));
+        inputCPublic = IInputControlPublic(new InputControlPublic());
+        c1 = new UseCaseContractPublic(address(inputCPublic));
         vm.stopPrank();
     }
 
@@ -54,12 +54,12 @@ contract FuzzTestICP is Test {
      *  HELPER FUNCTIONS
      *
      */
-    function createPermission(address _allower, address _contractAddress, bytes4 _functionSelector, address _caller)
+    function _createPermission(address _allower, address _contractAddress, bytes4 _functionSelector, address _caller)
         private
         pure
-        returns (IInputControlGlobal.Permission memory)
+        returns (IInputControlPublic.Permission memory)
     {
-        IInputControlGlobal.Permission memory p = IInputControlGlobal.Permission({
+        IInputControlPublic.Permission memory p = IInputControlPublic.Permission({
             allower: _allower,
             contractAddress: _contractAddress,
             functionSelector: _functionSelector,
@@ -75,23 +75,23 @@ contract FuzzTestICP is Test {
      */
 
     // If properly implemented with ICP: Only contracts can give permissions to its users.
-    function testFuzz_SetInputsPermissionOnlyContract(address _attacker, address _attacker2) public {
+    function testFuzz_ICP_SetInputsPermissionOnlyContract(address _attacker, address _attacker2) public {
         if (_attacker == address(0)) _attacker = address(69);
         if (_attacker2 == address(0)) _attacker2 = address(6969);
 
         // No one but allowed user can eventually execute permissions in properly set contracts
-        IInputControlGlobal.Permission memory p = createPermission(_attacker, address(c1), myFuncSelec, _attacker);
+        IInputControlPublic.Permission memory p = _createPermission(_attacker, address(c1), myFuncSelec, _attacker);
         bytes32[] memory input = new bytes32[](1);
         input[0] = input0.id;
 
         // User tries to give himself permissions
         vm.startPrank(_attacker);
-        inputCGlobal.setInputsPermission(p, input, false);
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        inputCPublic.setInputsPermission(p, input, false);
+        vm.expectRevert(IInputControlPublic.InputControlPublic__PermissionDoesntExist.selector);
         c1.myFunc(input0.num, input0.addr);
 
-        inputCGlobal.setInputsPermission(p, input, true);
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        inputCPublic.setInputsPermission(p, input, true);
+        vm.expectRevert(IInputControlPublic.InputControlPublic__PermissionDoesntExist.selector);
         c1.myFunc(input0.num, input0.addr);
         vm.stopPrank();
 
@@ -99,7 +99,7 @@ contract FuzzTestICP is Test {
         vm.prank(owner1);
         c1.giveInputPermission(_attacker, input, myFuncSig, false);
         // Another _attacker tris to use other person's inputs
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__PermissionDoesntExist.selector);
+        vm.expectRevert(IInputControlPublic.InputControlPublic__PermissionDoesntExist.selector);
         vm.prank(_attacker2);
         c1.myFunc(input0.num, input0.addr);
         // Allowed user calls function and works
@@ -108,15 +108,15 @@ contract FuzzTestICP is Test {
     }
 
     // Impersonation is not posible.
-    function testFuzz_SetInputsPermissionImpersonationNotPosible(address _attacker, address _victim) public {
+    function testFuzz_ICP_SetInputsPermissionImpersonationNotPosible(address _attacker, address _victim) public {
         // Attacker impersonating user victim
-        IInputControlGlobal.Permission memory p = createPermission(_victim, address(c1), myFuncSelec, _attacker);
+        IInputControlPublic.Permission memory p = _createPermission(_victim, address(c1), myFuncSelec, _attacker);
         bytes32[] memory input = new bytes32[](1);
         input[0] = input0.id;
 
         // User tries impersonating
         vm.prank(_attacker);
-        vm.expectRevert(IInputControlGlobal.InputControlGlobal__AllowerIsNotSender.selector);
-        inputCGlobal.setInputsPermission(p, input, false);
+        vm.expectRevert(IInputControlPublic.InputControlPublic__AllowerIsNotSender.selector);
+        inputCPublic.setInputsPermission(p, input, false);
     }
 }

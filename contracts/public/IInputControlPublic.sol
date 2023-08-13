@@ -7,12 +7,19 @@ pragma solidity ^0.8.18;
  * @notice This interface defines a system for controlling the sequence and set of inputs
  * addresses can send to contract functions. It allows total control on function call input values.
  *
- * @dev For an interface implementation, refer to the contract InputControlGlobal.sol:
+ * @dev For an interface implementation, refer to the contract InputControlPublic.sol:
  * (TODO: add link)
  * @dev For an implementation example, refer to the contract UseCaseContractGlobal.sol:
  * (TODO: add link)
  */
-interface IDInputControlPrivate {
+interface IInputControlPublic {
+    /* Customed Errors */
+    error InputControlPublic__NotAllowedInput();
+    error InputControlPublic__PermissionDoesntExist();
+    error InputControlPublic__AllowerIsNotSender();
+
+    /* Types */
+
     /// @notice Represents the various states a permission can be in
     /// Can represent if permission exists and if so to which kind of
     /// allowed input points to.
@@ -24,18 +31,24 @@ interface IDInputControlPrivate {
 
     /// @notice Defines a set of parameters to control permissions
     /// @param allower The address granting permissions
+    //  @param contractAddress The address of the contrac whose function will be called.
     /// @param functionSelector The function selector for the target function in the contract
     /// @param caller The address being granted the permission
     struct Permission {
         address allower;
+        address contractAddress;
         bytes4 functionSelector;
         address caller;
     }
 
+    /* Events */
+
     /// @notice Event emitted when permissions for inputs are granted
     /// @param permission The associated permission details
     /// @param state The state of the permission (sequence or unordered)
-    event DInputControlPrivate__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+    event InputControlPublic__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+
+    /* Functions */
 
     /// @notice Calculates a unique ID for a permission
     /// @param _p The permission details
@@ -61,6 +74,5 @@ interface IDInputControlPrivate {
     /// @notice Checks if a specific input is allowed for a permission
     /// @param _p The permission details
     /// @param _input The input to check
-    /// @return True if the input is allowed, otherwise false
-    function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool);
+    function isAllowedInput(Permission calldata _p, bytes32 _input) external;
 }

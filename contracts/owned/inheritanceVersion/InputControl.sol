@@ -1,32 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-/* Customed Errors */
-error InputControlComposite__NotAllowedInput();
-error InputControlComposite__OnlyAdmin();
-error InputControlComposite__CantMakeZeroAddressAdmin();
-
-import "./IInputControlComposite.sol";
-
+import "./IInputControl.sol";
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
 /**
- * @title Input Control Modular.
+ * @title Input Control.
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @notice InputControlComposite is an implementation of IInputControlComposite. It's been created
- * for cases where inheriting the inheritance version of InputControl contract results in a too large
- * contract size to be deployed error.
+ * @notice InputControl can be used to control which inputs can some addresses send to
+ * your smart contracts' functions. Even more: in case of needing an specific order of inputs
+ * in multiple calls to the same function, it's also handeled by InputControl.
  *
- * @notice As we are not inheriting, we need some way of controlling who is giving permissions to out
- * contracts. Thats why there is a simple admin system implementation compatible with Ownable or AccessControl
- * by OpenZeppelin.
+ * @dev Check an usecase on a contract at UseCaseContract.sol on the github repo:
+ * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/UseCaseContract.sol
  *
- * @dev To check an usecase check UseCaseContractModular.sol:
- * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/UseCaseContractModular.sol
  */
-contract InputControlComposite is IInputControlComposite {
+contract InputControl is IInputControl {
     /* Types */
 
     /**
@@ -67,51 +58,56 @@ contract InputControlComposite is IInputControlComposite {
 
     /* State Variables */
 
-    // Admin state variables
-    uint256 private s_adminCounter;
-    mapping(address => bool) s_isAdmin;
-
-    // Input permissions variables
     mapping(bytes32 => InputSequence) s_inputsSequences;
     mapping(bytes32 => InputUnordered) s_inputsUnordered;
-    mapping(bytes32 => IInputControlComposite.PermissionState) s_permissionState;
+    mapping(bytes32 => IInputControl.PermissionState) s_permissionState;
 
     /* Modifiers */
 
-    modifier onlyAdmin() {
-        if (!s_isAdmin[msg.sender]) {
-            revert InputControlComposite__OnlyAdmin();
+    modifier isAllowedInput(address _allower, bytes4 _funcSelec, address _caller, bytes32 _input) {
+        // Getting permission values needed
+        Permission memory _p = Permission({allower: _allower, functionSelector: _funcSelec, caller: _caller});
+        if (_p.caller != msg.sender) {
+            revert InputControl__SenderIsNotPermissionCaller();
+        }
+
+        bytes32 pId = getPermissionId(_p);
+        PermissionState currentState = s_permissionState[pId];
+
+        // Checking permission state, only exeute if existing permission
+        if (currentState == PermissionState.IS_NOT_EXISTING) {
+            revert IInputControl.InputControl__PermissionDoesntExist();
+        }
+
+        // Use the proper checking for each structure
+        // Return false statements should never execute, they are added just in case.
+        if (currentState == PermissionState.IS_SEQUENCE) {
+            _hanldeSequenceCheck(pId, _input);
+        }
+        if (currentState == PermissionState.IS_UNORDERED) {
+            _hanldeUnorderedCheck(pId, _input);
         }
         _;
-    }
-
-    /* Constructor */
-    constructor() {
-        s_isAdmin[msg.sender] = true;
     }
 
     /* Functions */
 
     /**
-     * @dev See documentation for the following public or external functions in IInputControlComposite.sol:
+     * @dev See documentation for the following public or external functions in IInputControl.sol:
      * (TODO: add link)
      *
      * @dev Private functions docs can be found here, down below.
      */
 
-    /* Public functions */
+    /* Public Functions */
     /* Getters */
 
     function getPermissionId(Permission memory _p) public pure returns (bytes32) {
-        return keccak256(abi.encode(_p.functionSelector, _p.caller));
+        return keccak256(abi.encode(_p.allower, _p.functionSelector, _p.caller));
     }
 
-    function getPermissionState(Permission calldata _p) public view returns (IInputControlComposite.PermissionState) {
+    function getPermissionState(Permission calldata _p) public view returns (IInputControl.PermissionState) {
         return s_permissionState[getPermissionId(_p)];
-    }
-
-    function getIsAdmin(address _someone) public view returns (bool) {
-        return s_isAdmin[_someone];
     }
 
     function getAllowedInputs(Permission calldata _p) public view returns (bytes32[] memory) {
@@ -126,16 +122,24 @@ contract InputControlComposite is IInputControlComposite {
         return new bytes32[](0);
     }
 
-    function getAdminCount() public view returns (uint256) {
-        return s_adminCounter;
+    /**
+     * @dev Override this function in your contract to use
+     * allowInputsFor() mixed with other useful contracts and
+     * modifiers like Owner and AccessControl contracts from
+     * OpenZeppelin.
+     *
+     * See param specifications in allowInputsFor() docs.
+     */
+    function callSetInputsPermission(Permission calldata _p, bytes32[] calldata _validInputs, bool _isSequence)
+        public
+        virtual
+    {
+        _setInputsPermission(_p, _validInputs, _isSequence);
     }
 
-    /* Setters */
+    /* Private functions */
 
-    function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence)
-        public
-        onlyAdmin
-    {
+    function _setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) private {
         bytes32 pId = getPermissionId(_p);
 
         // Check if there is some storage to clean up.
@@ -155,50 +159,8 @@ contract InputControlComposite is IInputControlComposite {
             _handleNewUnorderedPermission(pId, _inputsIds);
         }
 
-        emit InputControlComposite__InputsPermissionGranted(_p, s_permissionState[pId]);
+        emit InputControl__InputsPermissionGranted(_p, s_permissionState[pId]);
     }
-
-    /* External functions */
-
-    function setAdmin(address _newAdmin, bool _newIsAdmin) external onlyAdmin {
-        // Set new admin state for the new admin
-        s_isAdmin[_newAdmin] = _newIsAdmin;
-
-        // Update admin counter and state that signals if contract has admins
-        if (_newIsAdmin) {
-            s_adminCounter++;
-        } else {
-            if (s_adminCounter > 0) {
-                s_adminCounter--;
-            }
-        }
-    }
-
-    function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool) {
-        // Getting permission values needed
-        bytes32 pId = getPermissionId(_p);
-        PermissionState currentState = s_permissionState[pId];
-
-        // Checking permission state, only exeute if existing permission
-        if (currentState == PermissionState.IS_NOT_EXISTING) {
-            revert InputControlComposite__NotAllowedInput();
-        }
-
-        // Use the proper checking for each structure
-        // Return false statements should never execute, they are added just in case.
-        if (currentState == PermissionState.IS_SEQUENCE) {
-            _hanldeSequenceCheck(pId, _input);
-            return false;
-        }
-        if (currentState == PermissionState.IS_UNORDERED) {
-            _hanldeUnorderedCheck(pId, _input);
-            return false;
-        }
-
-        return true;
-    }
-
-    /* Private functions */
 
     /**
      * @dev This function creates a new InputSequence struct and indexes it with the `_permissionId` given.
@@ -291,12 +253,12 @@ contract InputControlComposite is IInputControlComposite {
     function _hanldeSequenceCheck(bytes32 _permissionId, bytes32 _input) private {
         // Hanlding case deleted inputSequence case
         if (s_inputsSequences[_permissionId].inputsToUse == 0) {
-            revert InputControlComposite__NotAllowedInput();
+            revert IInputControl.InputControl__NotAllowedInput();
         }
 
         // The main input check
         if (s_inputsSequences[_permissionId].inputs[s_inputsSequences[_permissionId].currentCall] != _input) {
-            revert InputControlComposite__NotAllowedInput();
+            revert IInputControl.InputControl__NotAllowedInput();
         }
 
         // Updating inputSequence values
@@ -328,7 +290,7 @@ contract InputControlComposite is IInputControlComposite {
             s_inputsUnordered[_permissionId].inputToTimesToUse[_input] == 0
                 || s_inputsUnordered[_permissionId].inputsToUse == 0
         ) {
-            revert InputControlComposite__NotAllowedInput();
+            revert IInputControl.InputControl__NotAllowedInput();
         }
 
         // Updating InputUnordered structure values

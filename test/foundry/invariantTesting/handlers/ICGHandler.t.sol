@@ -6,8 +6,8 @@ pragma solidity ^0.8.18;
 // import {Test} from "../../../../lib/forge-std/src/Test.sol";
 // import "../../../../lib/forge-std/src/console.sol";
 
-// import {IInputControlGlobal} from "contracts/decentralized/globalVersion/IInputControlGlobal.sol";
-// import {UseCaseContractGlobal} from "contracts/decentralized/globalVersion/UseCaseContractGlobal.sol";
+// import {IInputControlPublic} from "contracts/public/IInputControlPublic.sol";
+// import {UseCaseContractPublic} from "contracts/public/UseCaseContractPublic.sol";
 
 // // We supose contracts implemented ICG correctly.
 // contract HandlerICG is Test {
@@ -28,21 +28,21 @@ pragma solidity ^0.8.18;
 //     bytes4 public myFuncSelec = bytes4(keccak256(bytes(myFuncSig)));
 
 //     // Events used
-//     event InputControlGlobal__InputsPermissionGranted(
-//         IInputControlGlobal.Permission indexed permission, IInputControlGlobal.PermissionState state
+//     event InputControlPublic__InputsPermissionGranted(
+//         IInputControlPublic.Permission indexed permission, IInputControlPublic.PermissionState state
 //     );
 
 //     // Shortened states access
-//     IInputControlGlobal.PermissionState public unordered = IInputControlGlobal.PermissionState.IS_UNORDERED;
-//     IInputControlGlobal.PermissionState public sequence = IInputControlGlobal.PermissionState.IS_SEQUENCE;
-//     IInputControlGlobal.PermissionState public notExisting = IInputControlGlobal.PermissionState.IS_NOT_EXISTING;
+//     IInputControlPublic.PermissionState public unordered = IInputControlPublic.PermissionState.IS_UNORDERED;
+//     IInputControlPublic.PermissionState public sequence = IInputControlPublic.PermissionState.IS_SEQUENCE;
+//     IInputControlPublic.PermissionState public notExisting = IInputControlPublic.PermissionState.IS_NOT_EXISTING;
 
 //     uint256 public constant NUM_OF_INPUTS_ALLOWED = 10;
 //     UseCaseContractInputs[] public inputs;
 //     address[] public ownersOfContracts;
 //     address[] public contractsImplemetingICG;
 //     address public callersUsed;
-//     IInputControlGlobal public inputControlGlobal;
+//     IInputControlPublic public inputControlPublic;
 
 //     // A strcut used to keep track user interactions with contracts to later check in invariants
 //     // if any of them lead to a bad interaction.
@@ -51,7 +51,7 @@ pragma solidity ^0.8.18;
 //         address contractAddr;
 //         address ownerOfContract;
 //         bytes4 funcSelec;
-//         IInputControlGlobal.PermissionState lastState;
+//         IInputControlPublic.PermissionState lastState;
 //     }
 
 //     mapping(bytes32 => UserState) public interactionsJudge;
@@ -95,7 +95,7 @@ pragma solidity ^0.8.18;
 //             inputs.push(u);
 //         }
 
-//         inputControlGlobal = IInputControlGlobal(inputControlAddress);
+//         inputControlPublic = IInputControlPublic(inputControlAddress);
 //     }
 
 //     /**
@@ -107,9 +107,9 @@ pragma solidity ^0.8.18;
 //     function _createPermission(address _allower, address _contractAddress, bytes4 _functionSelector, address _caller)
 //         private
 //         pure
-//         returns (IInputControlGlobal.Permission memory)
+//         returns (IInputControlPublic.Permission memory)
 //     {
-//         IInputControlGlobal.Permission memory p = IInputControlGlobal.Permission({
+//         IInputControlPublic.Permission memory p = IInputControlPublic.Permission({
 //             allower: _allower,
 //             contractAddress: _contractAddress,
 //             functionSelector: _functionSelector,
@@ -139,12 +139,12 @@ pragma solidity ^0.8.18;
 //         address _contractAddress,
 //         address _contractOwner,
 //         bytes4 _funcSelec,
-//         IInputControlGlobal.PermissionState _expectedState
+//         IInputControlPublic.PermissionState _expectedState
 //     ) private {
 //         // Saving interaction state
-//         IInputControlGlobal.Permission memory p =
+//         IInputControlPublic.Permission memory p =
 //             _createPermission(_contractAddress, _contractAddress, myFuncSelec, _user);
-//         IInputControlGlobal.PermissionState ps = inputControlGlobal.getPermissionState(p);
+//         IInputControlPublic.PermissionState ps = inputControlPublic.getPermissionState(p);
 //         UserState memory us = UserState({
 //             user: _user,
 //             contractAddr: _contractAddress,
@@ -215,7 +215,7 @@ pragma solidity ^0.8.18;
 //         if (_someone == address(0)) _someone = address(69);
 //         _numOfInputs = bound(_numOfInputs, 0, 10);
 //         uint256 i = _randomIndex % contractsImplemetingICG.length;
-//         UseCaseContractGlobal c = UseCaseContractGlobal(contractsImplemetingICG[i]);
+//         UseCaseContractPublic c = UseCaseContractPublic(contractsImplemetingICG[i]);
 //         address owner = ownersOfContracts[i];
 
 //         bytes32[] memory inputsIds = new bytes32[](_numOfInputs);
@@ -226,11 +226,11 @@ pragma solidity ^0.8.18;
 //         vm.prank(owner);
 //         c.giveInputPermission(_someone, inputsIds, myFuncSig, _isSeq);
 
-//         IInputControlGlobal.PermissionState expected;
+//         IInputControlPublic.PermissionState expected;
 //         if (_isSeq) {
-//             expected = IInputControlGlobal.PermissionState.IS_SEQUENCE;
+//             expected = IInputControlPublic.PermissionState.IS_SEQUENCE;
 //         } else {
-//             expected = IInputControlGlobal.PermissionState.IS_UNORDERED;
+//             expected = IInputControlPublic.PermissionState.IS_UNORDERED;
 //         }
 //         _updateUserState(_someone, address(c), owner, myFuncSelec, expected);
 //         usersWithProfiles.push(_someone);

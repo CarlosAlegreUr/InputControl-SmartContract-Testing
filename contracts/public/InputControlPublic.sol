@@ -1,32 +1,54 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-/* Customed Errors */
-error InputControl__NotAllowedInput();
-error InputControl__CantMakeZeroAddressAdmin();
+import "./IInputControlPublic.sol";
 
-import "./IInputControl.sol";
 // Uncomment this line to use console.log
-// import "hardhat/console.sol";
+// import "../../../lib/forge-std/src/console.sol";
 
 /**
- * @title Input Control.
+ * @title Input Control Global
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @notice InputControl can be used to control which inputs can some addresses send to
- * your smart contracts' functions. Even more: in case of needing an specific order of inputs
- * in multiple calls to the same function, it's also handeled by InputControl.
+ * @notice InputControlPublic is an implementation of IInputControlPublic. It's been created
+ * aiming to create public infrastructure for EVM compatible blockchains.
  *
- * @dev Check an usecase on a contract at UseCaseContract.sol on the github repo:
- * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/UseCaseContract.sol
+ * The InputControl system can be used to control which inputs can some addresses send to
+ * your smart contracts' functions. Furthermore you can decide if a user can call a function
+ * with a defined inputs sequence.
  *
+ * Example: You want your client only to call a function 3 times, first time with input value = 1,
+ * second value = 2 and third time value = 3.
+ *
+ * Input control can handle that the desired values are used in the desired order. Or even in an undordered manner.
+ *
+ * @dev To use this public inftastructure add a IInputControlPublic reference in your contract like so:
+ *
+ *        IInputControlPublic inputControl = IInputControlPublic("official address yet to be deployed")
+ *
+ * Now you can call the setInputsPermission() and isAllowedInput() functions to give permissions or check
+ * them when people try to use your contract services.
+ *
+ * @dev To check an implementation example check the contract UseCaseContractGlobal.sol:
+ * (TODO: add link)
+ *
+ * @notice InputControl is available in other formats for private use:
+ *
+ * @dev To check the InputContro contract that works with inheritance:
+ * (TODO: add link)
+ *
+ * @dev To check the InputControl.sol contract that works with composition:
+ * (TODO: add link)
  */
-contract InputControl is IInputControl {
+contract InputControlPublic is IInputControlPublic {
     /* Types */
 
     /**
-     * @dev inputSequence struct allows the user tho call any input in the inputs array
-     * but it has to be done in the order they are indexed.
+     * @dev InputSequence struct allows the user tho call any input in the `inputs` array
+     * but they must do it in the order they are indexed.
+     *
+     * Each bytes32 is the solidity's keckack hash representation of your inputs.
+     * keckack(abi.encode(...inputs...))
      *
      * Example => First call must be done with the input at index 0, then the one at index 1,
      * then the index 2 value etc...
@@ -38,12 +60,12 @@ contract InputControl is IInputControl {
     }
 
     /**
-     * @dev inputUnordered struct allows the user to call any input in the inputs array
+     * @dev InputUnordered struct allows the user to call any input in the inputs array
      * in any order. If desired to call the function with the same input twice, add the input
      * 2 times in the array and so on.
      *
      * @dev The only reason why `inputs` exists is to be more 'off-chain-user-friendly' and let the user
-     * consult which inputs they can still use.
+     * consult which inputs they can still use. A.k.a. those whos value != bytes32(0).
      *
      * @dev The only reason why `inputToPosition` exists is for a better storage space management of `inputs`
      * array when an input is used.
@@ -62,50 +84,33 @@ contract InputControl is IInputControl {
 
     /* State Variables */
 
+    /**
+     * @dev Check `Permission` struct and the `PermissionState` state enum at IInputControlPublic.sol.
+     */
+    // State of a permission ID
+    mapping(bytes32 => PermissionState) s_permissionState;
+    // Permission ID to its corresponding alloed InputSequece
     mapping(bytes32 => InputSequence) s_inputsSequences;
+    // Permission ID to its corresponding alloed InputUnordered
     mapping(bytes32 => InputUnordered) s_inputsUnordered;
-    mapping(bytes32 => IInputControl.PermissionState) s_permissionState;
-
-    /* Modifiers */
-
-    modifier isAllowedInput(Permission calldata _p, bytes32 _input) {
-        // Getting permission values needed
-        bytes32 pId = getPermissionId(_p);
-        PermissionState currentState = s_permissionState[pId];
-
-        // Checking permission state, only exeute if existing permission
-        if (currentState == PermissionState.IS_NOT_EXISTING) {
-            revert InputControl__NotAllowedInput();
-        }
-
-        // Use the proper checking for each structure
-        // Return false statements should never execute, they are added just in case.
-        if (currentState == PermissionState.IS_SEQUENCE) {
-            _hanldeSequenceCheck(pId, _input);
-        }
-        if (currentState == PermissionState.IS_UNORDERED) {
-            _hanldeUnorderedCheck(pId, _input);
-        }
-        _;
-    }
 
     /* Functions */
 
     /**
-     * @dev See documentation for the following public or external functions in IInputControl.sol:
+     * @dev See documentation for the following public or external functions in IInputControlPublic.sol:
      * (TODO: add link)
      *
      * @dev Private functions docs can be found here, down below.
      */
 
-    /* Public Functions */
+    /* Public functions */
     /* Getters */
 
     function getPermissionId(Permission memory _p) public pure returns (bytes32) {
-        return keccak256(abi.encode(_p.functionSelector, _p.caller));
+        return keccak256(abi.encode(_p.allower, _p.contractAddress, _p.functionSelector, _p.caller));
     }
 
-    function getPermissionState(Permission calldata _p) public view returns (IInputControl.PermissionState) {
+    function getPermissionState(Permission calldata _p) public view returns (PermissionState) {
         return s_permissionState[getPermissionId(_p)];
     }
 
@@ -121,24 +126,14 @@ contract InputControl is IInputControl {
         return new bytes32[](0);
     }
 
-    /**
-     * @dev Override this function in your contract to use
-     * allowInputsFor() mixed with other useful contracts and
-     * modifiers like Owner and AccessControl contracts from
-     * OpenZeppelin.
-     *
-     * See param specifications in allowInputsFor() docs.
-     */
-    function callSetInputsPermission(Permission calldata _p, bytes32[] calldata _validInputs, bool _isSequence)
-        public
-        virtual
-    {
-        _setInputsPermission(_p, _validInputs, _isSequence);
-    }
+    /* Setters */
 
-    /* Private functions */
+    function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) public {
+        // Check so no impersonation occures
+        if (msg.sender != _p.allower) {
+            revert IInputControlPublic.InputControlPublic__AllowerIsNotSender();
+        }
 
-    function _setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) private {
         bytes32 pId = getPermissionId(_p);
 
         // Check if there is some storage to clean up.
@@ -158,8 +153,31 @@ contract InputControl is IInputControl {
             _handleNewUnorderedPermission(pId, _inputsIds);
         }
 
-        emit InputControl__InputsPermissionGranted(_p, s_permissionState[pId]);
+        emit InputControlPublic__InputsPermissionGranted(_p, s_permissionState[pId]);
     }
+
+    /* External functions */
+
+    function isAllowedInput(Permission calldata _p, bytes32 _input) external {
+        // Getting permission values needed
+        bytes32 pId = getPermissionId(_p);
+        PermissionState currentState = s_permissionState[pId];
+
+        // Checking permission state, only exeute if existing permission
+        if (currentState == PermissionState.IS_NOT_EXISTING) {
+            revert IInputControlPublic.InputControlPublic__PermissionDoesntExist();
+        }
+
+        // Use the proper checking for each structure
+        if (currentState == PermissionState.IS_SEQUENCE) {
+            _hanldeSequenceCheck(pId, _input);
+        }
+        if (currentState == PermissionState.IS_UNORDERED) {
+            _hanldeUnorderedCheck(pId, _input);
+        }
+    }
+
+    /* Private functions */
 
     /**
      * @dev This function creates a new InputSequence struct and indexes it with the `_permissionId` given.
@@ -250,14 +268,9 @@ contract InputControl is IInputControl {
      * @param _input is the hash representation (id) of the input being used by the caller.
      */
     function _hanldeSequenceCheck(bytes32 _permissionId, bytes32 _input) private {
-        // Hanlding case deleted inputSequence case
-        if (s_inputsSequences[_permissionId].inputsToUse == 0) {
-            revert InputControl__NotAllowedInput();
-        }
-
         // The main input check
         if (s_inputsSequences[_permissionId].inputs[s_inputsSequences[_permissionId].currentCall] != _input) {
-            revert InputControl__NotAllowedInput();
+            revert IInputControlPublic.InputControlPublic__NotAllowedInput();
         }
 
         // Updating inputSequence values
@@ -289,7 +302,7 @@ contract InputControl is IInputControl {
             s_inputsUnordered[_permissionId].inputToTimesToUse[_input] == 0
                 || s_inputsUnordered[_permissionId].inputsToUse == 0
         ) {
-            revert InputControl__NotAllowedInput();
+            revert IInputControlPublic.InputControlPublic__NotAllowedInput();
         }
 
         // Updating InputUnordered structure values

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
 /**
- * @title Input Control Interface
+ * @title Input Control Modular Interface
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  * @notice This interface defines a system for controlling the sequence and set of inputs
  * addresses can send to contract functions. It allows total control on function call input values.
@@ -14,7 +12,13 @@ pragma solidity ^0.8.18;
  * @dev For an implementation example, refer to the contract UseCaseContractModular.sol:
  * (TODO: add link)
  */
-interface IInputControl {
+interface IInputControlComposite {
+    /* Customed Errors */
+    error InputControlComposite__NotAllowedInput();
+    error InputControlComposite__PermissionDoesntExist();
+    error InputControlComposite__OnlyAdmin();
+    error InputControlComposite__CantMakeZeroAddressAdmin();
+
     /// @notice Represents the various states a permission can be in
     /// Can represent if permission exists and if so to which kind of
     /// allowed input points to.
@@ -25,9 +29,13 @@ interface IInputControl {
     }
 
     /// @notice Defines a set of parameters to control permissions
+    /// @param allower The address granting permissions
+    //  @param contractAddress The address of the contrac whose function will be called.
     /// @param functionSelector The function selector for the target function in the contract
-    /// @param caller The address being who is being granted the permission
+    /// @param caller The address being granted the permission
     struct Permission {
+        address allower;
+        address contractAddress;
         bytes4 functionSelector;
         address caller;
     }
@@ -37,7 +45,10 @@ interface IInputControl {
     /// @notice Event emitted when permissions for inputs are granted
     /// @param permission The associated permission details
     /// @param state The state of the permission (sequence or unordered)
-    event InputControl__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+    event InputControlComposite__InputsPermissionGranted(Permission indexed permission, PermissionState state);
+
+    /* Checkers */
+    function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool);
 
     /* Getters */
 
@@ -49,7 +60,10 @@ interface IInputControl {
     /// @notice Fetches the state of a permission
     /// @param _p The permission details
     /// @return The state of the given permission
-    function getPermissionState(Permission calldata _p) external view returns (PermissionState);
+    function getPermissionState(Permission calldata _p)
+        external
+        view
+        returns (IInputControlComposite.PermissionState);
 
     /// @notice Retrieves the allowed input IDs for a permission
     /// @param _p The permission details
@@ -62,6 +76,18 @@ interface IInputControl {
     /// @param _p The permission details
     /// @param _inputsIds List of input IDs to permit
     /// @param _isSequence Whether the inputs should be used in sequence or not
-    function callSetInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence)
-        external;
+    function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) external;
+
+    /* Admin related functions */
+
+    /// @param _someone The address to check
+    /// @return Wheter `_someone` has admin permissions or not. True = It has, False = I hasnt
+    function getIsAdmin(address _someone) external view returns (bool);
+
+    /// @return Returns how many admins the contract has.
+    function getAdminCount() external view returns (uint256);
+
+    /// @param _newAdmin The address to apply the change
+    /// @param _newIsAdmin Wheter to make admin or not
+    function setAdmin(address _newAdmin, bool _newIsAdmin) external;
 }

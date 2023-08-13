@@ -1,27 +1,26 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.18;
 
-// import "hardhat/console.sol";
-
-import "./IInputControlGlobal.sol";
-import "../../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
-
+// Comment out if not debugging
 import "../../../lib/forge-std/src/console.sol";
+
+import "./IInputControlComposite.sol";
+import "../../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // AccessControl.sol is not used in this contract but here it is if
 // you want to play with it. (:D)
-// import "@openzeppelin/contracts/access/AccessControl.sol";
+// import "../../../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 
 /**
- * @title Example of contract using InputControlGlobal public services.
+ * @title Example of contract using InputControlPublic public services.
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
- * @dev To use InputControlGlobal services instantiate a reference to an IInputControlGlobal
+ * @dev To use InputControlPublic services instantiate a reference to an IInputControlComposite
  * contract address. Check official addresses here: (TODO)
  *
  * @notice For now there are no official implementation addresses in mainnets or testnets
  * because the code has not been audited yet. So when testing in local or testnet you will have to
- * deploy InputControlGlobal first and use its resulting address.
+ * deploy InputControlPublic first and use its resulting address.
  *
  * @dev Additionally you can wrap setInputsPermission() call in a function that uses your own useful
  * modfiers. This will allow mixing this functionalities with other useful ones like Ownable or
@@ -32,22 +31,22 @@ import "../../../lib/forge-std/src/console.sol";
  * personalizations. For example this UseCaseContract has a locker variable that activates and
  * deactivate input checkings.
  */
-contract UseCaseContractGlobal is Ownable {
-    IInputControlGlobal immutable i_inputControl; // <---- Look here!
+contract UseCaseContractComposite is Ownable {
+    IInputControlComposite immutable i_inputControl; // <---- Look here!
     bool private s_inputControlDisabled; // <--- The locker variable mentioned above
     uint256 private s_incrediblyAmazingNumber;
     address private s_someAddress;
 
-    constructor(address _inputControlGlobalAddress) {
-        // Instantiation of the InputControlGlobal service
-        i_inputControl = IInputControlGlobal(_inputControlGlobalAddress); // <---- Look here!
+    constructor(address _inputControlPublicAddress) {
+        // Instantiation of the InputControlPublic service
+        i_inputControl = IInputControlComposite(_inputControlPublicAddress); // <---- Look here!
     }
 
     // Look here!
     modifier checkInputControl(string memory _funcSig, address _callerAddress, bytes32 _input) {
         if (!s_inputControlDisabled) {
             bytes4 _funcSelec = bytes4(keccak256(bytes(_funcSig)));
-            IInputControlGlobal.Permission memory p = IInputControlGlobal.Permission({
+            IInputControlComposite.Permission memory p = IInputControlComposite.Permission({
                 allower: address(this), // <-- We are checking that this address
                 contractAddress: address(this), // <-- has given permissions to call inside this contract
                 functionSelector: _funcSelec, // <-- this function with the _input
@@ -69,8 +68,8 @@ contract UseCaseContractGlobal is Ownable {
         bool _isSequence
     ) external onlyOwner /* <---- Look here! */ {
         bytes4 funcSelec = bytes4(keccak256(bytes(_funcSignature)));
-        IInputControlGlobal.Permission memory p = IInputControlGlobal.Permission({
-            allower: address(this), // <-- We will say to InputControlGlobal that this address
+        IInputControlComposite.Permission memory p = IInputControlComposite.Permission({
+            allower: address(this), // <-- We will say to InputControlPublic that this address
             contractAddress: address(this), // <-- has given permissions to call inside this contract
             functionSelector: funcSelec, // <-- this function with the inputs _validInputs
             caller: _callerAddress // <-- to this address
@@ -81,7 +80,7 @@ contract UseCaseContractGlobal is Ownable {
     // Any function in your own smart contract.
     function myFunc(uint256 _newNumber, address _anAddress)
         external
-        // <--- Modifier that will call InputControlGlobal
+        // <--- Modifier that will call InputControlPublic
         checkInputControl(
             "myFunc(uint256,address)", //<---- Look here!
             msg.sender, //<---- Look here!

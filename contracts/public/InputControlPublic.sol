@@ -11,7 +11,7 @@ import "./IInputControlPublic.sol";
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
  * @notice InputControlPublic is an implementation of IInputControlPublic. It's been created
- * aiming to create public infrastructure for EVM compatible blockchains.
+ * aiming to serve as public infrastructure on EVM compatible blockchains.
  *
  * The InputControl system can be used to control which inputs can some addresses send to
  * your smart contracts' functions. Furthermore you can decide if a user can call a function
@@ -22,23 +22,8 @@ import "./IInputControlPublic.sol";
  *
  * Input control can handle that the desired values are used in the desired order. Or even in an undordered manner.
  *
- * @dev To use this public inftastructure add a IInputControlPublic reference in your contract like so:
- *
- *        IInputControlPublic inputControl = IInputControlPublic("official address yet to be deployed")
- *
- * Now you can call the setInputsPermission() and isAllowedInput() functions to give permissions or check
- * them when people try to use your contract services.
- *
- * @dev To check an implementation example check the contract UseCaseContractGlobal.sol:
- * (TODO: add link)
- *
- * @notice InputControl is available in other formats for private use:
- *
- * @dev To check the InputContro contract that works with inheritance:
- * (TODO: add link)
- *
- * @dev To check the InputControl.sol contract that works with composition:
- * (TODO: add link)
+ * @dev Check how to use this infrastructure in the UseCaseContractPublic.sol
+ * (link TODO)
  */
 contract InputControlPublic is IInputControlPublic {
     /* Types */

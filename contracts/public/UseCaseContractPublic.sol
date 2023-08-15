@@ -42,6 +42,7 @@ contract UseCaseContractPublic is Ownable {
     constructor(address _inputControlPublicAddress) {
         i_inputControl = IInputControlPublic(_inputControlPublicAddress);
     }
+
     // @notice Features built on top of InputControl variables
 
     // @notice Locker for activating or deactivating controls
@@ -65,7 +66,7 @@ contract UseCaseContractPublic is Ownable {
                 functionSelector: _funcSelec, // <-- this function with the _input
                 caller: _callerAddress // <-- to this address
             });
-            /// @notice Caller will always be address(this), thats why is marked as essential witht the orange circle.
+            /// @notice Caller should always be address(this), thats why is marked as essential with the orange circle.
             i_inputControl.isAllowedInput(p, _input);
         }
         _;
@@ -79,7 +80,7 @@ contract UseCaseContractPublic is Ownable {
         bytes32[] calldata _validInputs,
         string calldata _funcSignature,
         bool _isSequence
-    ) external onlyOwner /* <-- InputControl features compatibility with powerful ones like Ownable.sol*/ {
+    ) external onlyOwner /* <-- InputControl features compatibility with Ownable.sol*/ {
         bytes4 _funcSelec = bytes4(keccak256(bytes(_funcSignature)));
 
         /// @notice For best practices, this filtering should be made a modifier.
@@ -90,7 +91,7 @@ contract UseCaseContractPublic is Ownable {
         }
 
         if (_funcSelec == bytes4(keccak256(bytes("startMatch(address,bytes32)")))) {
-            // You cannot give input permissions to yourself so you can start fights with whoever you want.
+            // You cannot give input permissions to yourself so you can start matches with whoever you want.
             require(_callerAddress != msg.sender);
         }
 
@@ -104,10 +105,12 @@ contract UseCaseContractPublic is Ownable {
         i_inputControl.setInputsPermission(p, _validInputs, _isSequence);
     }
 
-    /// @dev Any functions in your own smart contract. These functions are not needed in order to use InputControl,
-    /// they are just features that can be build on top of it.
+    /// @dev The followig are any of the functions in your own smart contract. 
+    /// These functions are not needed in order to use InputControl,
+    /// they are just example features that can be build on top of it.
 
-    /// @dev myFunc is some function in your contract that only owner or privileged roles can give inpit permissions to.
+    /// @dev myFunc is some function in your contract that only owner or privileged roles 
+    /// can give inpit permissions to.
     function myFunc(uint256 _newNumber, address _anAddress)
         external
         // Modifier that will call InputControlPublic

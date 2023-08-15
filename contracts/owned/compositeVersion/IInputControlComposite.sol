@@ -5,7 +5,7 @@ pragma solidity ^0.8.18;
  * @title Input Control Modular Interface
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  * @notice This interface defines a system for controlling the sequence and set of inputs
- * addresses can send to contract functions. It allows total control on function call input values.
+ * addresses can send to a contract's functions. It allows total control on function calls input values.
  *
  * @dev For an interface implementation, refer to the contract InputControlComposite.sol:
  * (TODO: add link)
@@ -19,8 +19,8 @@ interface IInputControlComposite {
     error InputControlComposite__OnlyAdmin();
     error InputControlComposite__CantMakeZeroAddressAdmin();
 
-    /// @notice Represents the various states a permission can be in
-    /// Can represent if permission exists and if so to which kind of
+    /// @notice Represents the various states a permission can be in.
+    /// It represents if permission exists and if so to which kind of
     /// allowed input points to.
     enum PermissionState {
         IS_NOT_EXISTING,
@@ -48,6 +48,10 @@ interface IInputControlComposite {
     event InputControlComposite__InputsPermissionGranted(Permission indexed permission, PermissionState state);
 
     /* Checkers */
+
+    /// @notice Checks if a specific input is allowed for a permission
+    /// @param _p The permission details
+    /// @param _input The input to check
     function isAllowedInput(Permission calldata _p, bytes32 _input) external returns (bool);
 
     /* Getters */
@@ -81,13 +85,14 @@ interface IInputControlComposite {
     /* Admin related functions */
 
     /// @param _someone The address to check
-    /// @return Wheter `_someone` has admin permissions or not. True = It has, False = I hasnt
+    /// @return Wheter `_someone` has admin permissions or not. True = It has, False = It hasnt
     function getIsAdmin(address _someone) external view returns (bool);
 
     /// @return Returns how many admins the contract has.
     function getAdminCount() external view returns (uint256);
 
-    /// @param _newAdmin The address to apply the change
-    /// @param _newIsAdmin Wheter to make admin or not
+    /// @param _newAdmin The address to apply the change.
+    /// @param _newIsAdmin Wheter to make admin or not. If true, `_newAdmin` will becom admin, if false
+    /// it won't or will be revoked from its admin role. 
     function setAdmin(address _newAdmin, bool _newIsAdmin) external;
 }

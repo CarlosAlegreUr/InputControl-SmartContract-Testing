@@ -29,6 +29,19 @@ contract InputControlPublic is IInputControlPublic {
     /* Types */
 
     /**
+     * @dev This contract asumes that input Ids which == bytes32(0) are used or non-exiting
+     * inputs.
+     *
+     * @notice In the following structs to manage allowed inputs, there is an array of inputs which
+     * is useful to consult which inputs someone is allowed to use.
+     *
+     * But if anytime the input value is hashed and collides with 0 value in solidity, then inputs
+     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
+     * correct but off-chain user will have to take into account that one of the inputs is the colliding
+     * with 0 one when analyzing their allowed inputs.
+     */
+
+    /**
      * @dev InputSequence struct allows the user tho call any input in the `inputs` array
      * but they must do it in the order they are indexed.
      *
@@ -49,16 +62,14 @@ contract InputControlPublic is IInputControlPublic {
      * in any order. If desired to call the function with the same input twice, add the input
      * 2 times in the array and so on.
      *
-     * @dev The only reason why `inputs` exists is to be more 'off-chain-user-friendly' and let the user
-     * consult which inputs they can still use. A.k.a. those whos value != bytes32(0).
+     * @dev The `inputs` array in this struct has no functional purpose or essential role, it exists
+     * just to be more 'off-chain-user-friendly' and let the user consult which inputs can still
+     * use.
      *
      * @dev The only reason why `inputToPosition` exists is for a better storage space management of `inputs`
-     * array when an input is used.
-     *
-     * @notice If anytime the input value is hashed and collides with 0 value in solidity, then inputs
-     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
-     * correct but off-chain user will have to take into account that one of the inputs is the colliding
-     * with 0 one when analyzing their allowed inputs.
+     * array when an input is used. Furhtermore, as the empty value in solidity for ints is 0, inputToIndex is
+     * not being used because 0 index is a valid index and would also be the empty value. Thats why we are using
+     * inputToPosition which its minimum valid value is 1.
      */
     struct InputUnordered {
         bytes32[] inputs;
@@ -70,7 +81,7 @@ contract InputControlPublic is IInputControlPublic {
     /* State Variables */
 
     /**
-     * @dev Check `Permission` struct and the `PermissionState` state enum at IInputControlPublic.sol.
+     * @dev Check docs for `Permission` struct and the `PermissionState` state enum at IInputControlPublic.sol.
      */
     // State of a permission ID
     mapping(bytes32 => PermissionState) s_permissionState;
@@ -114,7 +125,7 @@ contract InputControlPublic is IInputControlPublic {
     /* Setters */
 
     function setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) public {
-        // Check so no impersonation occures
+        // Check so no impersonation occurs
         if (msg.sender != _p.allower) {
             revert IInputControlPublic.InputControlPublic__AllowerIsNotSender();
         }
@@ -148,7 +159,7 @@ contract InputControlPublic is IInputControlPublic {
         bytes32 pId = getPermissionId(_p);
         PermissionState currentState = s_permissionState[pId];
 
-        // Checking permission state, only exeute if existing permission
+        // Checking permission state, only execute if existing permission
         if (currentState == PermissionState.IS_NOT_EXISTING) {
             revert IInputControlPublic.InputControlPublic__PermissionDoesntExist();
         }
@@ -249,7 +260,7 @@ contract InputControlPublic is IInputControlPublic {
      * InputSequence parameters and handles proper storage deletion once an input
      * is used and once all of them are.
      *
-     * @param _permissionId is the permission ID that points to the permission that wants to be checked.
+     * @param _permissionId is the permission ID of the permission that wants to be checked.
      * @param _input is the hash representation (id) of the input being used by the caller.
      */
     function _hanldeSequenceCheck(bytes32 _permissionId, bytes32 _input) private {
@@ -263,7 +274,7 @@ contract InputControlPublic is IInputControlPublic {
         s_inputsSequences[_permissionId].inputsToUse -= 1;
 
         if (s_inputsSequences[_permissionId].inputsToUse != 0) {
-            // Setting to bytes(0) value the input used in the input array.
+            // Setting to bytes(0) value to the input used in the input array.
             delete s_inputsSequences[_permissionId].inputs[
                         s_inputsSequences[_permissionId].currentCall - 1
                     ];
@@ -282,7 +293,7 @@ contract InputControlPublic is IInputControlPublic {
      * @param _input is the hash representation (id) of the input being used by the caller.
      */
     function _hanldeUnorderedCheck(bytes32 _permissionId, bytes32 _input) private {
-        // Checking if the input exists or if has been used.
+        // Checking if the input exists or if it has been used.
         if (
             s_inputsUnordered[_permissionId].inputToTimesToUse[_input] == 0
                 || s_inputsUnordered[_permissionId].inputsToUse == 0

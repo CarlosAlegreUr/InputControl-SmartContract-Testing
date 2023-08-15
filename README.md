@@ -56,13 +56,22 @@ If further elaboration, development or testing please mention me in your work or
 
 ## 📰 Last Changes 📰
 
-- Admin based (centralized) or nor admin based (decentralized) version are in develompent. All code has been refactored, old test need to be refactored too.
+- Admin based (centralized) or nor admin based (decentralized) version are in develompent. All code has been refactored, old hardhat test should eventually be refactored too. New updated foundry tests exits though.
 
 ## 🎉 FUTURE IMPROVEMENTS 🎉
 
-- Write the new test for the refactor contract.
-
 - Test in testnet.
+
+- Write tests for hash with bytes32(0) value. Wheter for inputs or permissions ids.
+
+- 1 Fuzz test not passing, check it out.
+
+- Add new feature. Now if granted new input permissions, old ones get overwritten. Make it so user can add or
+  remove existing ones without overwriting.
+
+- Protect agains DoS attacks by abusing the contract's storage in the public version.
+
+- Self-audit with automated tools.
 
 - Audit.
 

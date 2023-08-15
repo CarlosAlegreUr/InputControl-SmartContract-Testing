@@ -21,8 +21,24 @@ contract InputControl is IInputControl {
     /* Types */
 
     /**
-     * @dev inputSequence struct allows the user tho call any input in the inputs array
-     * but it has to be done in the order they are indexed.
+     * @dev This contract asumes that input Ids which == bytes32(0) are used or non-exiting
+     * inputs.
+     *
+     * @notice In the following structs to manage allowed inputs, there is an array of inputs which
+     * is useful to consult which inputs someone is allowed to use.
+     *
+     * But if anytime the input value is hashed and collides with 0 value in solidity, then inputs
+     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
+     * correct but off-chain user will have to take into account that one of the inputs is the colliding
+     * with 0 one when analyzing their allowed inputs.
+     */
+
+    /**
+     * @dev InputSequence struct allows the user tho call any input in the `inputs` array
+     * but they must do it in the order they are indexed.
+     *
+     * Each bytes32 is the solidity's keckack hash representation of your inputs.
+     * keckack(abi.encode(...inputs...))
      *
      * Example => First call must be done with the input at index 0, then the one at index 1,
      * then the index 2 value etc...
@@ -34,20 +50,18 @@ contract InputControl is IInputControl {
     }
 
     /**
-     * @dev inputUnordered struct allows the user to call any input in the inputs array
+     * @dev InputUnordered struct allows the user to call any input in the inputs array
      * in any order. If desired to call the function with the same input twice, add the input
      * 2 times in the array and so on.
      *
-     * @dev The only reason why `inputs` exists is to be more 'off-chain-user-friendly' and let the user
-     * consult which inputs they can still use.
+     * @dev The `inputs` array in this struct has no functional purpose or essential role, it exists
+     * just to be more 'off-chain-user-friendly' and let the user consult which inputs can still
+     * use.
      *
      * @dev The only reason why `inputToPosition` exists is for a better storage space management of `inputs`
-     * array when an input is used.
-     *
-     * @notice If anytime the input value is hashed and collides with 0 value in solidity, then inputs
-     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
-     * correct but off-chain user will have to take into account that one of the inputs is the colliding
-     * with 0 one when analyzing their allowed inputs.
+     * array when an input is used. Furhtermore, as the empty value in solidity for ints is 0, inputToIndex is
+     * not being used because 0 index is a valid index and would also be the empty value. Thats why we are using
+     * inputToPosition which its minimum valid value is 1.
      */
     struct InputUnordered {
         bytes32[] inputs;
@@ -58,12 +72,23 @@ contract InputControl is IInputControl {
 
     /* State Variables */
 
+    /**
+     * @dev Check docs for `Permission` struct and the `PermissionState` state enum at IInputControlPublic.sol.
+     */
+    // State of a permission ID
+    mapping(bytes32 => PermissionState) s_permissionState;
+    // Permission ID to its corresponding alloed InputSequece
     mapping(bytes32 => InputSequence) s_inputsSequences;
+    // Permission ID to its corresponding alloed InputUnordered
     mapping(bytes32 => InputUnordered) s_inputsUnordered;
-    mapping(bytes32 => IInputControl.PermissionState) s_permissionState;
 
     /* Modifiers */
 
+    /// @notice Checks if a specific input is allowed for a permission.
+    /// @param _allower In order to create the permission.
+    /// @param _funcSelec In order to create the permission.
+    /// @param _caller In order to create the permission.
+    /// @param _input The input to check
     modifier isAllowedInput(address _allower, bytes4 _funcSelec, address _caller, bytes32 _input) {
         // Getting permission values needed
         Permission memory _p = Permission({allower: _allower, functionSelector: _funcSelec, caller: _caller});
@@ -124,11 +149,11 @@ contract InputControl is IInputControl {
 
     /**
      * @dev Override this function in your contract to use
-     * allowInputsFor() mixed with other useful contracts and
+     * callSetInputsPermission() mixed with other useful contracts and
      * modifiers like Owner and AccessControl contracts from
      * OpenZeppelin.
      *
-     * See param specifications in allowInputsFor() docs.
+     * See param specifications in callSetInputsPermission() docs.
      */
     function callSetInputsPermission(Permission calldata _p, bytes32[] calldata _validInputs, bool _isSequence)
         public
@@ -139,6 +164,9 @@ contract InputControl is IInputControl {
 
     /* Private functions */
 
+    /**
+     * @dev Set permissions for the inputs with Ids in the _inputsIds. It's called by callSetInputsPermission()
+     */
     function _setInputsPermission(Permission calldata _p, bytes32[] calldata _inputsIds, bool _isSequence) private {
         bytes32 pId = getPermissionId(_p);
 

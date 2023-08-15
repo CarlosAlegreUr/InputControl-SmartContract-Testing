@@ -7,26 +7,43 @@ import "./IInputControlComposite.sol";
 // import "hardhat/console.sol";
 
 /**
- * @title Input Control Modular.
+ * @title Input Control Composite.
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  *
  * @notice InputControlComposite is an implementation of IInputControlComposite. It's been created
  * for cases where inheriting the inheritance version of InputControl contract results in a too large
- * contract size to be deployed error.
+ * contract size to be deployed error. Furthermore it allows for managing more complex systems that involve
+ * multiple contracts.
  *
  * @notice As we are not inheriting, we need some way of controlling who is giving permissions to out
  * contracts. Thats why there is a simple admin system implementation compatible with Ownable or AccessControl
  * by OpenZeppelin.
  *
- * @dev To check an usecase check UseCaseContractModular.sol:
- * https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/contracts/modularVersion/UseCaseContractModular.sol
+ * @dev To check an usecase check UseCaseContractComposite.sol:
+ * (TODO: add link)
  */
 contract InputControlComposite is IInputControlComposite {
     /* Types */
 
     /**
-     * @dev inputSequence struct allows the user tho call any input in the inputs array
-     * but it has to be done in the order they are indexed.
+     * @dev This contract asumes that input Ids which == bytes32(0) are used or non-exiting
+     * inputs.
+     *
+     * @notice In the following structs to manage allowed inputs, there is an array of inputs which
+     * is useful to consult which inputs someone is allowed to use.
+     *
+     * But if anytime the input value is hashed and collides with 0 value in solidity, then inputs
+     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
+     * correct but off-chain user will have to take into account that one of the inputs is the colliding
+     * with 0 one when analyzing their allowed inputs.
+     */
+
+    /**
+     * @dev InputSequence struct allows the user tho call any input in the `inputs` array
+     * but they must do it in the order they are indexed.
+     *
+     * Each bytes32 is the solidity's keckack hash representation of your inputs.
+     * keckack(abi.encode(...inputs...))
      *
      * Example => First call must be done with the input at index 0, then the one at index 1,
      * then the index 2 value etc...
@@ -38,20 +55,18 @@ contract InputControlComposite is IInputControlComposite {
     }
 
     /**
-     * @dev inputUnordered struct allows the user to call any input in the inputs array
+     * @dev InputUnordered struct allows the user to call any input in the inputs array
      * in any order. If desired to call the function with the same input twice, add the input
      * 2 times in the array and so on.
      *
-     * @dev The only reason why `inputs` exists is to be more 'off-chain-user-friendly' and let the user
-     * consult which inputs they can still use.
+     * @dev The `inputs` array in this struct has no functional purpose or essential role, it exists
+     * just to be more 'off-chain-user-friendly' and let the user consult which inputs can still
+     * use.
      *
      * @dev The only reason why `inputToPosition` exists is for a better storage space management of `inputs`
-     * array when an input is used.
-     *
-     * @notice If anytime the input value is hashed and collides with 0 value in solidity, then inputs
-     * array may not show properly the hashes of the inputs you can't and can use. Functionality will be
-     * correct but off-chain user will have to take into account that one of the inputs is the colliding
-     * with 0 one when analyzing their allowed inputs.
+     * array when an input is used. Furhtermore, as the empty value in solidity for ints is 0, inputToIndex is
+     * not being used because 0 index is a valid index and would also be the empty value. Thats why we are using
+     * inputToPosition which its minimum valid value is 1.
      */
     struct InputUnordered {
         bytes32[] inputs;
@@ -63,16 +78,28 @@ contract InputControlComposite is IInputControlComposite {
     /* State Variables */
 
     // Admin state variables
+    // Number of addresses that are admin in the contract
     uint256 private s_adminCounter;
+    // Mapping from addresses to boolean indicating if they are admin. 
+    // True == They are. False == They arent.
     mapping(address => bool) s_isAdmin;
 
     // Input permissions variables
+    /**
+     * @dev Check docs for `Permission` struct and the `PermissionState` state enum at IInputControlPublic.sol.
+     */
+    // Permission ID to its corresponding alloed InputSequece
     mapping(bytes32 => InputSequence) s_inputsSequences;
+    // Permission ID to its corresponding alloed InputUnordered
     mapping(bytes32 => InputUnordered) s_inputsUnordered;
+    // State of a permission ID
     mapping(bytes32 => IInputControlComposite.PermissionState) s_permissionState;
 
     /* Modifiers */
 
+    /**
+     * @dev Checks if msg.sender is admin.
+     */
     modifier onlyAdmin() {
         if (!s_isAdmin[msg.sender]) {
             revert IInputControlComposite.InputControlComposite__OnlyAdmin();
@@ -81,6 +108,10 @@ contract InputControlComposite is IInputControlComposite {
     }
 
     /* Constructor */
+
+    /**
+     * @notice Deployer becomes the first admin.
+     */
     constructor() {
         s_isAdmin[msg.sender] = true;
     }

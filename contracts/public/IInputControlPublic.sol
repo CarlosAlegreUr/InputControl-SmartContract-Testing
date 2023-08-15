@@ -5,11 +5,11 @@ pragma solidity ^0.8.18;
  * @title Input Control Global Interface
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  * @notice This interface defines a system for controlling the sequence and set of inputs
- * addresses can send to contract functions. It allows total control on function call input values.
+ * addresses can send to a contract's functions. It allows total control on function call input values.
  *
  * @dev For an interface implementation, refer to the contract InputControlPublic.sol:
  * (TODO: add link)
- * @dev For an implementation example, refer to the contract UseCaseContractGlobal.sol:
+ * @dev For a use-case example, refer to the contract UseCaseContractGlobal.sol:
  * (TODO: add link)
  */
 interface IInputControlPublic {
@@ -20,8 +20,8 @@ interface IInputControlPublic {
 
     /* Types */
 
-    /// @notice Represents the various states a permission can be in
-    /// Can represent if permission exists and if so to which kind of
+    /// @notice Represents the various states a permission can be in.
+    /// Represents if permission exists and if so to which kind of
     /// allowed input points to.
     enum PermissionState {
         IS_NOT_EXISTING,
@@ -31,7 +31,7 @@ interface IInputControlPublic {
 
     /// @notice Defines a set of parameters to control permissions
     /// @param allower The address granting permissions
-    //  @param contractAddress The address of the contrac whose function will be called.
+    //  @param contractAddress The address of the contract whose function will be called.
     /// @param functionSelector The function selector for the target function in the contract
     /// @param caller The address being granted the permission
     struct Permission {

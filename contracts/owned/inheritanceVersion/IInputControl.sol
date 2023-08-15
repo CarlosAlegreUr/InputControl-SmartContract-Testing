@@ -7,11 +7,11 @@ pragma solidity ^0.8.18;
  * @title Input Control Interface
  * @author Carlos Alegre Urquizú (GitHub --> https://github.com/CarlosAlegreUr)
  * @notice This interface defines a system for controlling the sequence and set of inputs
- * addresses can send to contract functions. It allows total control on function call input values.
+ * addresses can send to contract functions. It allows total control on function calls input values.
  *
- * @dev For an interface implementation, refer to the contract InputControlComposite.sol:
+ * @dev For an interface implementation, refer to the contract InputControl.sol:
  * (TODO: add link)
- * @dev For an implementation example, refer to the contract UseCaseContractModular.sol:
+ * @dev For an implementation example, refer to the contract UseCaseContract.sol:
  * (TODO: add link)
  */
 interface IInputControl {
@@ -32,8 +32,9 @@ interface IInputControl {
     }
 
     /// @notice Defines a set of parameters to control permissions
-    /// @param functionSelector The function selector for the target function in the contract
-    /// @param caller The address being who is being granted the permission
+    /// @param allower Address that allows the function call.
+    /// @param functionSelector The function selector for the target function in the contract.
+    /// @param caller The address who is being granted the permission.
     struct Permission {
         address allower;
         bytes4 functionSelector;
@@ -44,7 +45,7 @@ interface IInputControl {
 
     /// @notice Event emitted when permissions for inputs are granted
     /// @param permission The associated permission details
-    /// @param state The state of the permission (sequence or unordered)
+    /// @param state The state of the permission (not_existing, sequence or unordered)
     event InputControl__InputsPermissionGranted(Permission indexed permission, PermissionState state);
 
     /* Getters */

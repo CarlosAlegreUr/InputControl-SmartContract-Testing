@@ -5,9 +5,9 @@ import {Test} from "../../../lib/forge-std/src/Test.sol";
 import "../../../lib/forge-std/src/console.sol";
 
 // Composite (Global) version
-import {InputControlPublic} from "contracts/public/InputControlPublic.sol";
-import {IInputControlPublic} from "contracts/public/IInputControlPublic.sol";
-import {UseCaseContractPublic} from "contracts/public/UseCaseContractPublic.sol";
+import {InputControlPublic} from "../../../contracts/public/InputControlPublic.sol";
+import {IInputControlPublic} from "../../../contracts/public/IInputControlPublic.sol";
+import {UseCaseContractPublic} from "../../../contracts/public/UseCaseContractPublic.sol";
 
 contract FuzzTestICP is Test {
     /**

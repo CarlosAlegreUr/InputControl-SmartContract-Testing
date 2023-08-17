@@ -4,6 +4,7 @@ coverage
 coverage.json
 typechain
 typechain-types
+.gitmodules
 
 # Hardhat files
 cache
@@ -18,7 +19,7 @@ coverage.json
 typechain
 typechain-types
 
-# Hardhat files
-cache
-artifacts
-
+# Foundry files
+lib
+forge-cache
+out

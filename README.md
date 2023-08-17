@@ -1,67 +1,86 @@
-<hr/>
-<hr/>
+# [**Input Control Contract**](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
 
-<a name="readme-top"></a>
+---
 
-# [Input Control Contract](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
+## Tests for the **different InputControl implementations**.
 
-<hr/>
+- 📁 Check the contracts' code [here](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
+- 📦 Check the npm repo [here](https://www.npmjs.com/package/input-control-contract)
 
-# Tests and simple implementation for InputControl contract.
+> 📘 **Note**: If you further elaborate, develop, or test, kindly consider [mentioning me](https://github.com/CarlosAlegreUr) in your work or opening PRs to this repo.
 
-Check the contract code here => [(click)](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
+## Types of **InputControls implementations** 👪
 
-Check the npm repository => [(click)](https://www.npmjs.com/package/input-control-contract)
+<details> <summary> Types Legend ℹ️ </summary>
 
-I asked ChatGPT about it, this was it's answer:
+### Input Control (IC)
 
-`Overall, the InputControl smart contract looks well-structured and easy to understand. However, there are some areas where improvements could be made to enhance its functionality and usability.`
+#### Owned:
 
-After showing ChatGPT the UseCaseContract, it answered:
+- Inheritance (ICI)
+- Composite (ICC)
 
-`Based on the presented code, it seems that the previous improvement recommendations are not relevant anymore as they have been addressed in this version of the contract. However, it is always good practice to keep reviewing and improving the code to ensure it is secure and efficient. `
+#### Public:
 
-If further elaboration, development or testing please mention me in your work.
+- Public (ICP)
+</details>
 
-😉 https://github.com/CarlosAlegreUr 😉
+---
 
-<hr/>
+## **Input Control Current Tests' State** 📡
 
-## 📰 Last Changes 📰
+> **`Legend`**:
+>
+> 🟢 => High coverage, but there's always room for improvement!
+>
+> 🔵 => Needs revision, but has high or near high coverage.
+>
+> 🟡 => Currently being updated.
+>
+> 🔴 => Yet to be started.
 
-- Added new modular/interface implementation. In some codes inheriting InputControl could make the contract too big to be deployed. Inheriting implementation still available in the package though :D.
+---
 
-- Fixed bug, inputToTimesToUse mapping now is overwritten correctly. In previous version it could overflow and/or lead to unexpected behaviours.
+| InputControl Implementation | Unit Testing | Fuzz Testing | Invariant Testing | Testnet testing | Audited |
+| :-------------------------: | :----------: | :----------: | :---------------: | :-------------: | :-----: |
+|             ICI             |      🔵      |      🔴      |        🔴         |       🔴        |   🔴    |
+|             ICC             |      🔵      |      🔵      |        🔴         |       🔴        |   🔴    |
+|             ICP             |      🟢      |      🟢      |        🟡         |       🔴        |   🔴    |
 
-- New tests in tests' repository.
+---
 
-## 🎉 FUTURE IMPROVEMENTS 🎉
+## Last Changes 📰
 
-- Improve and review code and tests. (static analysis, audit...)
+- 🔄 All code has been **refactored**: Admin based (centralized) or non-admin based (decentralized public infrastructure) versions.
+- ✅ New updated **foundry tests** created.
 
-- Test in testnet.
-- Improve code quality in the tests. (Now it's a mess [ :,( ] )
-- Create modifier locker. Make it more flexible and be able to activate or deactivate InputControl in your functions.
-- Check if worth it to create better option: adding more allowed inputs to client who hasn't used all of them. Now it overwrites.
-- Check gas implications of changing 4 bytes function selector to 32 bytes hashed function signatures.
+---
 
-## 📨 Contact 📨
+## **FUTURE IMPROVEMENTS** 🎉
 
-Carlos Alegre Urquizú - calegreu@gmail.com
+- Write tests for hash with `bytes32(0)` value. Whether for inputs or permission ids.
+- **Test in testnet**.
+- Protect against **DoS attacks** by abusing the contract's storage in the public version.
+- **Self-audit** with automated tools.
+- **Third-party Audit/s**.
+- Old hardhat tests might be updated to the refactored code.
+- Add new **feature**. Now, if granted new input permissions, old ones get overwritten. Design it so users can modify existing ones without overwriting.
 
-<hr/>
+---
 
-## ☕ Buy me a CryptoCoffee ☕
+## Contact 📨
 
-Buy me a crypto coffe in ETH, MATIC or BNB ☕🧐☕
-(or tokens if you please :p )
+Carlos Alegre Urquizú - [calegreu@gmail.com](mailto:calegreu@gmail.com)
 
-0x2365bf29236757bcfD141Fdb5C9318183716d866
+---
 
-<hr/>
+## **Buy me a CryptoCoffee** ☕
 
-## 📜 License 📜
+Buy me a crypto coffee in ETH, MATIC, or BNB ☕🧐☕ (or any token if you fancy)
+`0x2365bf29236757bcfD141Fdb5C9318183716d866`
 
-Distributed under the MIT License. See [LICENSE](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/LICENSE) in the repository for more information.
+---
 
-([back to top](#🙀-the-problem-🙀))
+## **License** 📜
+
+Distributed under the MIT License. See [LICENSE](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/LICENSE) in the repository for more details.

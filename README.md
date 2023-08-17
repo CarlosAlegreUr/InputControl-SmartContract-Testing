@@ -1,97 +1,86 @@
-<hr/>
-<hr/>
-
-<a name="readme-top"></a>
-
-# [Input Control Contract](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
-
-<hr/>
-
-# Tests for the different InputControl implementations.
-
-Check the contract code here => [(click)](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
-
-Check the npm repository => [(click)](https://www.npmjs.com/package/input-control-contract)
-
-If further elaboration, development or testing please mention me in your work or open PRs to this repo.
-
-😉 https://github.com/CarlosAlegreUr 😉
-
-## Types of InputControls implementations:
-
-**Input Control (IC)**
-
-### Owned:
-
-- **Inheritance (ICI)**
-- **Composite (ICC)**
-
-### Public:
-
-- **Global (ICP)**
+# [**Input Control Contract**](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
 
 ---
 
-## Input Control Tests State:
+## Tests for the **different InputControl implementations**.
 
-> **Legend:**
->
-> 🟢 => Done, high coverage, feel free to improve though
->
-> 🔵 => Done, but not revised, coverage high
->
-> 🟡 => Updating
->
-> 🔴 => Not even started
+- 📁 Check the contracts' code [here](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern)
+- 📦 Check the npm repo [here](https://www.npmjs.com/package/input-control-contract)
+
+> 📘 **Note**: If you further elaborate, develop, or test, kindly consider [mentioning me](https://github.com/CarlosAlegreUr) in your work or opening PRs to this repo.
+
+## Types of **InputControls implementations** 👪
+
+<details> <summary> Types Legend ℹ️ </summary>
+
+### Input Control (IC)
+
+#### Owned:
+
+- Inheritance (ICI)
+- Composite (ICC)
+
+#### Public:
+
+- Public (ICP)
+</details>
 
 ---
 
-| **InputControl Implementation** | **Unit Testing** | **Fuzz Testing** | **Invariant Testing** | **Testnet testing** | **Audited** |
-| ------------------------------- | ---------------- | ---------------- | --------------------- | ------------------- | ----------- |
-| ICI                             | 🔵               | 🔴               | 🔴                    | 🔴                  | 🔴          |
-| ICC                             | 🔵               | 🔴               | 🔴                    | 🔴                  | 🔴          |
-| ICP                             | 🟢               | 🟢               | 🟡                    | 🔴                  | 🔴          |
+## **Input Control Current Tests' State** 📡
 
-<hr/>
+> **`Legend`**:
+>
+> 🟢 => High coverage, but there's always room for improvement!
+>
+> 🔵 => Needs revision, but has high or near high coverage.
+>
+> 🟡 => Currently being updated.
+>
+> 🔴 => Yet to be started.
 
-## 📰 Last Changes 📰
+---
 
-- Admin based (centralized) or nor admin based (decentralized) version are in develompent. All code has been refactored, old hardhat test should eventually be refactored too. New updated foundry tests exits though.
+| InputControl Implementation | Unit Testing | Fuzz Testing | Invariant Testing | Testnet testing | Audited |
+| :-------------------------: | :----------: | :----------: | :---------------: | :-------------: | :-----: |
+|             ICI             |      🔵      |      🔴      |        🔴         |       🔴        |   🔴    |
+|             ICC             |      🔵      |      🔵      |        🔴         |       🔴        |   🔴    |
+|             ICP             |      🟢      |      🟢      |        🟡         |       🔴        |   🔴    |
 
-## 🎉 FUTURE IMPROVEMENTS 🎉
+---
 
-- Test in testnet.
+## Last Changes 📰
 
-- Write tests for hash with bytes32(0) value. Wheter for inputs or permissions ids.
+- 🔄 All code has been **refactored**: Admin based (centralized) or non-admin based (decentralized public infrastructure) versions.
+- ✅ New updated **foundry tests** created.
 
-- 1 Fuzz test not passing, check it out.
+---
 
-- Add new feature. Now if granted new input permissions, old ones get overwritten. Make it so user can add or
-  remove existing ones without overwriting.
+## **FUTURE IMPROVEMENTS** 🎉
 
-- Protect agains DoS attacks by abusing the contract's storage in the public version.
+- Write tests for hash with `bytes32(0)` value. Whether for inputs or permission ids.
+- **Test in testnet**.
+- Protect against **DoS attacks** by abusing the contract's storage in the public version.
+- **Self-audit** with automated tools.
+- **Third-party Audit/s**.
+- Old hardhat tests might be updated to the refactored code.
+- Add new **feature**. Now, if granted new input permissions, old ones get overwritten. Design it so users can modify existing ones without overwriting.
 
-- Self-audit with automated tools.
+---
 
-- Audit.
+## Contact 📨
 
-## 📨 Contact 📨
+Carlos Alegre Urquizú - [calegreu@gmail.com](mailto:calegreu@gmail.com)
 
-Carlos Alegre Urquizú - calegreu@gmail.com
+---
 
-<hr/>
+## **Buy me a CryptoCoffee** ☕
 
-## ☕ Buy me a CryptoCoffee ☕
+Buy me a crypto coffee in ETH, MATIC, or BNB ☕🧐☕ (or any token if you fancy)
+`0x2365bf29236757bcfD141Fdb5C9318183716d866`
 
-Buy me a crypto coffe in ETH, MATIC or BNB ☕🧐☕
-(or tokens if you please :p )
+---
 
-0x2365bf29236757bcfD141Fdb5C9318183716d866
+## **License** 📜
 
-<hr/>
-
-## 📜 License 📜
-
-Distributed under the MIT License. See [LICENSE](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/LICENSE) in the repository for more information.
-
-([back to top](#🙀-the-problem-🙀))
+Distributed under the MIT License. See [LICENSE](https://github.com/CarlosAlegreUr/InputControl-SmartContract-DesignPattern/blob/main/LICENSE) in the repository for more details.

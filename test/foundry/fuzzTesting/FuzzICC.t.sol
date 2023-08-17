@@ -5,11 +5,11 @@ import {Test} from "../../../lib/forge-std/src/Test.sol";
 import "../../../lib/forge-std/src/console.sol";
 
 // Composite (Global) version
-import {InputControlPublic} from "../../../contracts/public/InputControlPublic.sol";
-import {IInputControlPublic} from "../../../contracts/public/IInputControlPublic.sol";
-import {UseCaseContractPublic} from "../../../contracts/public/UseCaseContractPublic.sol";
+import {InputControlComposite} from "../../../contracts/owned/compositeVersion/InputControlComposite.sol";
+import {IInputControlComposite} from "../../../contracts/owned/compositeVersion/IInputControlComposite.sol";
+import {UseCaseContractComposite} from "../../../contracts/owned/compositeVersion/UseCaseContractComposite.sol";
 
-contract FuzzTestICP is Test {
+contract FuzzTestICC is Test {
     /**
      *
      *  DATA STRUCTURES USED
@@ -26,8 +26,8 @@ contract FuzzTestICP is Test {
     address public owner1 = makeAddr("owner1");
 
     // Contracts used
-    UseCaseContractPublic public c1;
-    IInputControlPublic inputCPublic;
+    UseCaseContractComposite public c1;
+    IInputControlComposite inputCComposite;
 
     // Functions used (only 1 so far myFunc)
     string public myFuncSig = "myFunc(uint256,address)";
@@ -41,11 +41,12 @@ contract FuzzTestICP is Test {
 
     function setUp() public {
         // Deployment of the contracts
-        // inputCPublic --> Cant have owners
         // c1 --> Owned by user1
         vm.startPrank(owner1);
-        inputCPublic = IInputControlPublic(new InputControlPublic());
-        c1 = new UseCaseContractPublic(address(inputCPublic));
+        inputCComposite = IInputControlComposite(new InputControlComposite());
+        c1 = new UseCaseContractComposite(address(inputCComposite));
+        inputCComposite.setAdmin(address(c1), true);
+        inputCComposite.setAdmin(owner1, false);
         vm.stopPrank();
     }
 
@@ -57,9 +58,9 @@ contract FuzzTestICP is Test {
     function _createPermission(address _allower, address _contractAddress, bytes4 _functionSelector, address _caller)
         private
         pure
-        returns (IInputControlPublic.Permission memory)
+        returns (IInputControlComposite.Permission memory)
     {
-        IInputControlPublic.Permission memory p = IInputControlPublic.Permission({
+        IInputControlComposite.Permission memory p = IInputControlComposite.Permission({
             allower: _allower,
             contractAddress: _contractAddress,
             functionSelector: _functionSelector,
@@ -74,10 +75,11 @@ contract FuzzTestICP is Test {
      *
      */
 
-    // If properly implemented with ICP: Only contracts can give permissions to its users.
-    function testFuzz_ICP_SetInputsPermissionOnlyContract(address _attacker, address _attacker2) public {
-        // Checks making sure attacking scenarios make sense
+    // If properly implemented with ICC: Only contracts can give permissions to its users.
+    function testFuzz_ICC_SetInputsPermissionOnlyContract(address _attacker, address _attacker2) public {
+        // Checks that make sure that all scenarios make sense
         if (_attacker == address(0)) _attacker = address(69);
+        if (_attacker == address(c1)) _attacker = address(69);
         if (_attacker2 == address(0)) _attacker2 = address(6969);
         if (_attacker == _attacker2) {
             _attacker = address(6969);
@@ -85,18 +87,20 @@ contract FuzzTestICP is Test {
         }
 
         // No one but allowed user can eventually execute permissions in properly set contracts
-        IInputControlPublic.Permission memory p = _createPermission(_attacker, address(c1), myFuncSelec, _attacker);
+        IInputControlComposite.Permission memory p = _createPermission(_attacker, address(c1), myFuncSelec, _attacker);
         bytes32[] memory input = new bytes32[](1);
         input[0] = input0.id;
 
         // User tries to give himself permissions
+        vm.expectRevert(IInputControlComposite.InputControlComposite__OnlyAdmin.selector);
         vm.startPrank(_attacker);
-        inputCPublic.setInputsPermission(p, input, false);
-        vm.expectRevert(IInputControlPublic.InputControlPublic__PermissionDoesntExist.selector);
+        inputCComposite.setInputsPermission(p, input, false);
+        vm.expectRevert(IInputControlComposite.InputControlComposite__PermissionDoesntExist.selector);
         c1.myFunc(input0.num, input0.addr);
 
-        inputCPublic.setInputsPermission(p, input, true);
-        vm.expectRevert(IInputControlPublic.InputControlPublic__PermissionDoesntExist.selector);
+        vm.expectRevert(IInputControlComposite.InputControlComposite__OnlyAdmin.selector);
+        inputCComposite.setInputsPermission(p, input, true);
+        vm.expectRevert(IInputControlComposite.InputControlComposite__PermissionDoesntExist.selector);
         c1.myFunc(input0.num, input0.addr);
         vm.stopPrank();
 
@@ -104,30 +108,11 @@ contract FuzzTestICP is Test {
         vm.prank(owner1);
         c1.giveInputPermission(_attacker, input, myFuncSig, false);
         // Another _attacker tris to use other person's inputs
-        vm.expectRevert(IInputControlPublic.InputControlPublic__PermissionDoesntExist.selector);
+        vm.expectRevert(IInputControlComposite.InputControlComposite__PermissionDoesntExist.selector);
         vm.prank(_attacker2);
         c1.myFunc(input0.num, input0.addr);
         // Allowed user calls function and works
         vm.prank(_attacker);
         c1.myFunc(input0.num, input0.addr);
-    }
-
-    // Impersonation is not posible.
-    function testFuzz_ICP_SetInputsPermissionImpersonationNotPosible(address _attacker, address _victim) public {
-        // Checks making sure attacking scenarios make sense
-        if (_attacker == _victim) {
-            _attacker = address(6969);
-            _victim = address(69);
-        }
-
-        // Attacker impersonating user victim
-        IInputControlPublic.Permission memory p = _createPermission(_victim, address(c1), myFuncSelec, _attacker);
-        bytes32[] memory input = new bytes32[](1);
-        input[0] = input0.id;
-
-        // User tries impersonating
-        vm.prank(_attacker);
-        vm.expectRevert(IInputControlPublic.InputControlPublic__AllowerIsNotSender.selector);
-        inputCPublic.setInputsPermission(p, input, false);
     }
 }

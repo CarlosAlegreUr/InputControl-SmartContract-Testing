@@ -5,9 +5,9 @@ import {Test} from "../../lib/forge-std/src/Test.sol";
 import "../../lib/forge-std/src/console.sol";
 
 // Composite version
-import {InputControlComposite} from "contracts/owned/compositeVersion/InputControlComposite.sol";
-import {IInputControlComposite} from "contracts/owned/compositeVersion/IInputControlComposite.sol";
-import {UseCaseContractComposite} from "contracts/owned/compositeVersion/UseCaseContractComposite.sol";
+import {InputControlComposite} from "../../contracts/owned/compositeVersion/InputControlComposite.sol";
+import {IInputControlComposite} from "../../contracts/owned/compositeVersion/IInputControlComposite.sol";
+import {UseCaseContractComposite} from "../../contracts/owned/compositeVersion/UseCaseContractComposite.sol";
 
 contract UnitTestICC is Test {
     /**

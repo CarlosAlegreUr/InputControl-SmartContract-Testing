@@ -10,7 +10,7 @@ remappings = ['ds-test/=lib/forge-std/lib/ds-test/src/',
 via_ir = false
 
 [fuzz]
-runs = 10000
+runs = 15000
 
 [invariant]
 runs = 128

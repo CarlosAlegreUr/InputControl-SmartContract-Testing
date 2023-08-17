@@ -5,9 +5,9 @@ import {Test} from "../../lib/forge-std/src/Test.sol";
 import "../../lib/forge-std/src/console.sol";
 
 // Composite version
-import {InputControl} from "contracts/owned/inheritanceVersion/InputControl.sol";
-import {IInputControl} from "contracts/owned/inheritanceVersion/IInputControl.sol";
-import {UseCaseContract} from "contracts/owned/inheritanceVersion/UseCaseContract.sol";
+import {InputControl} from "../../contracts/owned/inheritanceVersion/InputControl.sol";
+import {IInputControl} from "../../contracts/owned/inheritanceVersion/IInputControl.sol";
+import {UseCaseContract} from "../../contracts/owned/inheritanceVersion/UseCaseContract.sol";
 
 contract UnitTestICI is Test {
     /**
@@ -95,7 +95,7 @@ contract UnitTestICI is Test {
     // If properly implemented with ICI: Only contracts can give permissions to its users.
     function testICI_SetInputsPermissionOnlyAdmin() public {
         // Users can't eventually execute permissions in properly set contracts
-        IInputControl.Permission memory p = _createPermission(address(c1), myFuncSelec, user1);
+        IInputControl.Permission memory p = _createPermission(owner1, myFuncSelec, user1);
         bytes32[] memory input = new bytes32[](1);
         input[0] = input0.id;
 
@@ -131,7 +131,7 @@ contract UnitTestICI is Test {
 
     // Order of sequence inputs calls is correct
     function testICI_InputsSequencesOnlyAllowsCorrectOrder() public {
-        IInputControl.Permission memory p = _createPermission(address(c1), myFuncSelec, user1);
+        IInputControl.Permission memory p = _createPermission(owner1, myFuncSelec, user1);
         bytes32[] memory input = new bytes32[](2);
         input[0] = input0.id;
         input[1] = input1.id;
@@ -171,7 +171,7 @@ contract UnitTestICI is Test {
 
     // Order of unordered inputs calls is correct
     function testICI_InputsUnorderedOnlyAllowsCorrectCalls() public {
-        IInputControl.Permission memory p = _createPermission(address(c1), myFuncSelec, user1);
+        IInputControl.Permission memory p = _createPermission(owner1, myFuncSelec, user1);
         // We can use input id 1 twice and id input 0 once.
         bytes32[] memory input = new bytes32[](3);
         input[0] = input0.id;
@@ -222,7 +222,7 @@ contract UnitTestICI is Test {
         input[1] = input1.id;
 
         // Now checking if inputs update correctly while users use them
-        IInputControl.Permission memory p2 = _createPermission(address(c1), myFuncSelec, user1);
+        IInputControl.Permission memory p2 = _createPermission(owner1, myFuncSelec, user1);
         vm.prank(owner1);
         c1.callSetInputsPermission(p2, input, true);
 

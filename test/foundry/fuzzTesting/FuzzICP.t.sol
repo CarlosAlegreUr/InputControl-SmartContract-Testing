@@ -78,6 +78,10 @@ contract FuzzTestICP is Test {
     function testFuzz_ICP_SetInputsPermissionOnlyContract(address _attacker, address _attacker2) public {
         if (_attacker == address(0)) _attacker = address(69);
         if (_attacker2 == address(0)) _attacker2 = address(6969);
+        if (_attacker == _attacker2) {
+            _attacker = address(6969);
+            _attacker2 = address(69);
+        }
 
         // No one but allowed user can eventually execute permissions in properly set contracts
         IInputControlPublic.Permission memory p = _createPermission(_attacker, address(c1), myFuncSelec, _attacker);
@@ -109,6 +113,10 @@ contract FuzzTestICP is Test {
 
     // Impersonation is not posible.
     function testFuzz_ICP_SetInputsPermissionImpersonationNotPosible(address _attacker, address _victim) public {
+        if (_attacker == _victim) {
+            _attacker = address(6969);
+            _victim = address(69);
+        }
         // Attacker impersonating user victim
         IInputControlPublic.Permission memory p = _createPermission(_victim, address(c1), myFuncSelec, _attacker);
         bytes32[] memory input = new bytes32[](1);
